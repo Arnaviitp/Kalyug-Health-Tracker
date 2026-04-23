@@ -1,4 +1,4 @@
-import { Check, Trash2, Plus, ChevronUp, ChevronDown } from 'lucide-react';
+import { Check, Trash2, Plus, ChevronUp, ChevronDown, Heart, Brain, Briefcase, Sun, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useState } from 'react';
 // eslint-disable-next-line no-unused-vars
@@ -6,6 +6,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const TactileLog = ({ habits, toggleHabit, addHabit, deleteHabit, moveHabit }) => {
   const [newHabit, setNewHabit] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('work');
+
+  const categories = [
+    { id: 'physical', icon: <Heart size={14} />, color: '#ef4444', label: 'Physical' },
+    { id: 'mental', icon: <Brain size={14} />, color: '#8b5cf6', label: 'Mental' },
+    { id: 'work', icon: <Briefcase size={14} />, color: '#3b82f6', label: 'Work' },
+    { id: 'soul', icon: <Sparkles size={14} />, color: '#f59e0b', label: 'Soul' },
+  ];
 
   const handleToggle = (habit) => {
     // If we're completing it, fire confetti
@@ -18,7 +26,7 @@ const TactileLog = ({ habits, toggleHabit, addHabit, deleteHabit, moveHabit }) =
   const handleAdd = (e) => {
     e.preventDefault();
     if (!newHabit.trim()) return;
-    addHabit(newHabit);
+    addHabit(newHabit, selectedCategory);
     setNewHabit('');
   };
 
@@ -84,7 +92,15 @@ const TactileLog = ({ habits, toggleHabit, addHabit, deleteHabit, moveHabit }) =
               onClick={() => handleToggle(habit)}
               aria-label={`Toggle habit ${habit.text}`}
             >
-              <span>{habit.text}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div className="habit-category-tag" style={{ 
+                  color: habit.completed ? 'white' : (categories.find(c => c.id === habit.category)?.color || 'var(--text-secondary)'),
+                  opacity: habit.completed ? 0.8 : 1
+                }}>
+                  {categories.find(c => c.id === habit.category)?.icon || <Sparkles size={14} />}
+                </div>
+                <span>{habit.text}</span>
+              </div>
               <div className="checkbox-circle">
                 {habit.completed && <Check size={16} strokeWidth={3} />}
               </div>
@@ -112,17 +128,33 @@ const TactileLog = ({ habits, toggleHabit, addHabit, deleteHabit, moveHabit }) =
       </AnimatePresence>
       
       {/* Add Habit Field */}
-      <form onSubmit={handleAdd} className="add-habit-container">
-        <input 
-          type="text" 
-          value={newHabit}
-          onChange={(e) => setNewHabit(e.target.value)}
-          placeholder="Craft a new habit..." 
-          className="add-habit-input"
-        />
-        <button type="submit" className="add-habit-btn">
-          <Plus size={20} />
-        </button>
+      <form onSubmit={handleAdd} className="add-habit-form-container">
+        <div className="category-selector-mini">
+          {categories.map(cat => (
+            <button
+              key={cat.id}
+              type="button"
+              className={`cat-mini-btn ${selectedCategory === cat.id ? 'active' : ''}`}
+              onClick={() => setSelectedCategory(cat.id)}
+              title={cat.label}
+              style={{ '--cat-color': cat.color }}
+            >
+              {cat.icon}
+            </button>
+          ))}
+        </div>
+        <div className="add-habit-container">
+          <input 
+            type="text" 
+            value={newHabit}
+            onChange={(e) => setNewHabit(e.target.value)}
+            placeholder="Craft a new habit..." 
+            className="add-habit-input"
+          />
+          <button type="submit" className="add-habit-btn">
+            <Plus size={20} />
+          </button>
+        </div>
       </form>
     </div>
   );

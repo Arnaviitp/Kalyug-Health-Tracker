@@ -2,6 +2,7 @@ import { Flame, Trophy, ShieldAlert, Heart, Activity, CheckCircle2 } from 'lucid
 import { motion } from 'framer-motion';
 
 const InsightDashboard = ({ 
+  habits,
   completedCount, 
   totalCount, 
   streaks, 
@@ -28,6 +29,20 @@ const InsightDashboard = ({
     hidden: { opacity: 0, scale: 0.95 },
     visible: { opacity: 1, scale: 1 }
   };
+
+  const categories = [
+    { id: 'physical', label: 'Physical', color: '#ef4444' },
+    { id: 'mental', label: 'Mental', color: '#8b5cf6' },
+    { id: 'work', label: 'Work', color: '#3b82f6' },
+    { id: 'soul', label: 'Soul', color: '#f59e0b' },
+  ];
+
+  const categoryStats = categories.map(cat => {
+    const catHabits = habits.filter(h => h.category === cat.id);
+    const total = catHabits.length;
+    const completed = catHabits.filter(h => h.completed).length;
+    return { ...cat, score: total === 0 ? 0 : (completed / total) * 100 };
+  });
 
   return (
     <motion.div 
@@ -119,6 +134,30 @@ const InsightDashboard = ({
                </div>
              )
           })}
+        </div>
+      </motion.div>
+
+      {/* Balance Visualizer (Radar-lite) */}
+      <motion.div variants={itemVariants} className="balance-section">
+        <h3 className="section-title">Life Balance</h3>
+        <div className="balance-grid">
+          {categoryStats.map(cat => (
+            <div key={cat.id} className="balance-item">
+              <div className="balance-label-row">
+                <span>{cat.label}</span>
+                <span>{Math.round(cat.score)}%</span>
+              </div>
+              <div className="balance-bar-bg">
+                <motion.div 
+                  className="balance-bar-fill"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${cat.score}%` }}
+                  style={{ backgroundColor: cat.color }}
+                  transition={{ duration: 1, ease: "easeOut" }}
+                />
+              </div>
+            </div>
+          ))}
         </div>
       </motion.div>
 

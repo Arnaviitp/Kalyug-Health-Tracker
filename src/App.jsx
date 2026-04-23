@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Moon, Sun, Monitor, Plus, Settings, Trophy } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Moon, Sun, Monitor, Plus, Settings, Trophy, Zap } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import TactileLog from './components/TactileLog';
 import CommitmentMap from './components/CommitmentMap';
 import InsightDashboard from './components/InsightDashboard';
@@ -21,18 +21,16 @@ const formatDate = (date) => {
 };
 
 const initialHabits = [
-  { id: 1, text: 'Morning Meditation (10m)', completed: false },
-  { id: 2, text: 'Deep Work Session (90m)', completed: false },
-  { id: 3, text: 'Drink 2L Water', completed: false }
+  { id: 1, text: 'Morning Meditation (10m)', completed: false, category: 'mental' },
+  { id: 2, text: 'Deep Work Session (90m)', completed: false, category: 'work' },
+  { id: 3, text: 'Drink 2L Water', completed: false, category: 'physical' }
 ];
 
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: {
-      staggerChildren: 0.1
-    }
+    transition: { staggerChildren: 0.1 }
   }
 };
 
@@ -46,49 +44,75 @@ const itemVariants = {
 };
 
 function App() {
+  // --- State Hooks ---
   const [isLoaded, setIsLoaded] = useState(false);
   const [showScroll, setShowScroll] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem('k-theme') || 'dark');
-  
   const [habits, setHabits] = useState(() => {
     const saved = localStorage.getItem('k-habits-v2');
     return saved ? JSON.parse(saved) : initialHabits;
   });
-  
   const [dailyLogs, setDailyLogs] = useState(() => {
     const saved = localStorage.getItem('k-dailylogs');
     return saved ? JSON.parse(saved) : {};
   });
-
   const [protectedDays, setProtectedDays] = useState(() => {
     const saved = localStorage.getItem('k-protected-days');
     return saved ? JSON.parse(saved) : {};
   });
-
   const [isRecoveryMode, setIsRecoveryMode] = useState(false);
-  
+  const [isZenMode, setIsZenMode] = useState(false);
+  const [toasts, setToasts] = useState([]);
   const [todayStr, setTodayStr] = useState(() => formatDate(new Date()));
+  const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [currentTip, setCurrentTip] = useState('');
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [achievementsOpen, setAchievementsOpen] = useState(false);
+  const [cpOpen, setCpOpen] = useState(false);
 
+  // Daily Quest Initialization
+  const [dailyQuest, setDailyQuest] = useState(() => {
+    const saved = localStorage.getItem('k-daily-quest');
+    const today = formatDate(new Date());
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.date === today) return parsed;
+    }
+    const categories = ['physical', 'mental', 'work', 'soul'];
+    const quest = {
+      date: today,
+      category: categories[Math.floor(Math.random() * categories.length)],
+      completed: false
+    };
+    localStorage.setItem('k-daily-quest', JSON.stringify(quest));
+    return quest;
+  });
+
+  // --- Derived Data ---
+  const completedCount = habits.filter(h => h.completed).length;
+  const totalCount = habits.length;
+  const totalCompletedEver = Object.values(dailyLogs).reduce((a, b) => a + (b || 0), 0);
+  let totalXP = totalCompletedEver * 10;
+  if (dailyQuest.completed) totalXP += 50;
+
+  // Level tracking state (needs totalXP for initial value)
+  const [lastLevel, setLastLevel] = useState(() => Math.floor(Math.sqrt(totalXP / 50)) + 1);
+
+  // --- Effect Hooks ---
   useEffect(() => {
-    // Check for day changes if tab is left open
     const interval = setInterval(() => {
       const currentDay = formatDate(new Date());
-      if (currentDay !== todayStr) {
-        setTodayStr(currentDay);
-      }
-    }, 60000); // every minute
+      if (currentDay !== todayStr) setTodayStr(currentDay);
+    }, 60000);
     return () => clearInterval(interval);
   }, [todayStr]);
 
   useEffect(() => {
-    // Reset habits if a new day started
     const lastLogin = localStorage.getItem('k-last-login');
     if (lastLogin && lastLogin !== todayStr) {
       setHabits(prev => prev.map(h => ({ ...h, completed: false })));
     }
     localStorage.setItem('k-last-login', todayStr);
-    
-    // Simulate initial page load
     const timer = setTimeout(() => setIsLoaded(true), 1200);
     return () => clearTimeout(timer);
   }, [todayStr]);
@@ -104,41 +128,66 @@ function App() {
     localStorage.setItem('k-theme', theme);
   }, [theme]);
 
-  // Sync logs when habits are toggled on the current day
   useEffect(() => {
     localStorage.setItem('k-habits-v2', JSON.stringify(habits));
-    
-    const completedToday = habits.filter(h => h.completed).length;
     setDailyLogs(prev => {
-      const updated = { ...prev, [todayStr]: completedToday };
+      const updated = { ...prev, [todayStr]: completedCount };
       localStorage.setItem('k-dailylogs', JSON.stringify(updated));
       return updated;
     });
-  }, [habits, todayStr]);
+
+    // Quest Completion Check
+    const questHabits = habits.filter(h => h.category === dailyQuest.category);
+    if (questHabits.length > 0 && questHabits.every(h => h.completed) && !dailyQuest.completed) {
+      setDailyQuest(prev => ({ ...prev, completed: true }));
+      addToast("Quest Complete!", `You've mastered today's ${dailyQuest.category} priority!`, "✨");
+    }
+  }, [habits, todayStr, dailyQuest.category, dailyQuest.completed, completedCount]);
+
+  useEffect(() => {
+    const currentLevel = Math.floor(Math.sqrt(totalXP / 50)) + 1;
+    if (currentLevel > lastLevel) {
+      setLastLevel(currentLevel);
+      addToast("Level Up!", `You've reached Level ${currentLevel}!`, "🚀");
+    }
+  }, [totalXP, lastLevel]);
 
   useEffect(() => {
     localStorage.setItem('k-protected-days', JSON.stringify(protectedDays));
   }, [protectedDays]);
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setCpOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // --- Helper Functions ---
+  const addToast = (title, message, icon = "🏆") => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, title, message, icon }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+  };
+
   const toggleBreakGlass = () => {
-    setProtectedDays(prev => ({
-      ...prev,
-      [todayStr]: !prev[todayStr]
-    }));
+    setProtectedDays(prev => ({ ...prev, [todayStr]: !prev[todayStr] }));
   };
 
   const toggleHabit = (id) => {
     setHabits(habits.map(h => h.id === id ? { ...h, completed: !h.completed } : h));
   };
 
-  const addHabit = (text) => {
+  const addHabit = (text, category = 'work') => {
     if (!text.trim()) return;
-    setHabits([...habits, { id: Date.now(), text, completed: false }]);
+    setHabits([...habits, { id: Date.now(), text, completed: false, category }]);
   };
 
-  const deleteHabit = (id) => {
-    setHabits(habits.filter(h => h.id !== id));
-  };
+  const deleteHabit = (id) => setHabits(habits.filter(h => h.id !== id));
 
   const moveHabit = (index, direction) => {
     const newHabits = [...habits];
@@ -153,39 +202,28 @@ function App() {
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
-  // Calculate Streak Architecture
   const calculateStreaks = () => {
     const datesWithLogs = Object.keys(dailyLogs).filter(k => dailyLogs[k] > 0 || protectedDays[k]).sort();
     let currentStreak = 0;
     let longestStreak = 0;
-    
     if (datesWithLogs.length > 0) {
-      // Calculate current streak
       let d = new Date();
-      if ((!dailyLogs[todayStr] || dailyLogs[todayStr] === 0) && !protectedDays[todayStr]) {
-        d.setDate(d.getDate() - 1);
-      }
+      if ((!dailyLogs[todayStr] || dailyLogs[todayStr] === 0) && !protectedDays[todayStr]) d.setDate(d.getDate() - 1);
       while (true) {
-         const dStr = formatDate(d);
-         if (dailyLogs[dStr] > 0 || protectedDays[dStr]) {
-            currentStreak++;
-            d.setDate(d.getDate() - 1);
-         } else break;
+        const dStr = formatDate(d);
+        if (dailyLogs[dStr] > 0 || protectedDays[dStr]) {
+          currentStreak++;
+          d.setDate(d.getDate() - 1);
+        } else break;
       }
-      
-      // Calculate longest streak
-      let tempStreak = 1;
-      longestStreak = 1;
+      let tempStreak = 1; longestStreak = 1;
       let prevDate = new Date(datesWithLogs[0]);
       for (let i = 1; i < datesWithLogs.length; i++) {
-         const curr = new Date(datesWithLogs[i]);
-         const diff = Math.round((curr - prevDate) / (1000 * 60 * 60 * 24));
-         if (diff === 1) tempStreak++;
-         else {
-            longestStreak = Math.max(longestStreak, tempStreak);
-            tempStreak = 1;
-         }
-         prevDate = curr;
+        const curr = new Date(datesWithLogs[i]);
+        const diff = Math.round((curr - prevDate) / (1000 * 60 * 60 * 24));
+        if (diff === 1) tempStreak++;
+        else { longestStreak = Math.max(longestStreak, tempStreak); tempStreak = 1; }
+        prevDate = curr;
       }
       longestStreak = Math.max(longestStreak, tempStreak, currentStreak);
     }
@@ -193,71 +231,6 @@ function App() {
   };
 
   const streaks = calculateStreaks();
-
-  // Prepare Heatmap Data (Dynamically starting from the first logged day)
-  const heatmapData = [];
-  const anchorDate = new Date();
-  const offsetSaturday = 6 - anchorDate.getDay();
-  const endSaturday = new Date(anchorDate);
-  endSaturday.setDate(anchorDate.getDate() + offsetSaturday);
-
-  const firstLogDateStr = Object.keys(dailyLogs).sort()[0] || todayStr;
-  const firstLogDate = new Date(firstLogDateStr);
-  const startSundayOffset = firstLogDate.getDay();
-  const startSunday = new Date(firstLogDate);
-  startSunday.setDate(firstLogDate.getDate() - startSundayOffset);
-  
-  // Calculate how many days to plot (must be a multiple of 7 to form complete weeks)
-  const totalDays = Math.round((endSaturday - startSunday) / (1000 * 60 * 60 * 24)) + 1;
-  const daysToPlot = Math.max(7, totalDays);
-
-  for (let i = 0; i < daysToPlot; i++) {
-    const d = new Date(startSunday);
-    d.setDate(startSunday.getDate() + i);
-    const isFuture = d > anchorDate;
-    const val = dailyLogs[formatDate(d)] || 0;
-    heatmapData.push({ 
-      date: d, 
-      value: isFuture ? 0 : (val > 4 ? 4 : val),
-      isFuture 
-    });
-  }
-
-  // Prepare Bar Chart Data
-  const chartData = [];
-  const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-  for (let i = 6; i >= 0; i--) {
-     const d = new Date();
-     d.setDate(d.getDate() - i);
-     chartData.push({
-       label: dayNames[d.getDay()],
-       val: dailyLogs[formatDate(d)] || 0
-     });
-  }
-
-  const completedCount = habits.filter(h => h.completed).length;
-  const totalCount = habits.length;
-  
-  const totalCompletedEver = Object.values(dailyLogs).reduce((a, b) => a + (b || 0), 0);
-  const totalXP = totalCompletedEver * 10;
-
-  const [aiModalOpen, setAiModalOpen] = useState(false);
-  const [currentTip, setCurrentTip] = useState('');
-  
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [achievementsOpen, setAchievementsOpen] = useState(false);
-  const [cpOpen, setCpOpen] = useState(false);
-
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        setCpOpen(true);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
 
   const handleAiClick = () => {
     const aiTips = [
@@ -269,31 +242,54 @@ function App() {
       "Small wins lead to big changes. Celebrate your progress today.",
       "Focus on what you can control. The rest will follow."
     ];
-    
-    // Simulate thinking
+    const categoryCounts = habits.reduce((acc, h) => {
+      acc[h.category] = (acc[h.category] || 0) + (h.completed ? 1 : 0);
+      return acc;
+    }, {});
+    let smartTip = "";
+    if (completedCount === 0) smartTip = "The hardest part is starting. Pick the smallest task and do it right now.";
+    else if (completedCount === habits.length) smartTip = "Perfect day achieved. Reflect on how this feels and carry this momentum tomorrow.";
+    else if (!categoryCounts['physical']) smartTip = "Your physical vitality seems neglected today. Even a 5-minute stretch can reset your energy.";
+    else if (streaks.currentStreak > 5) smartTip = `Impressive ${streaks.currentStreak} day streak! Keep the chain unbroken.`;
+    else smartTip = aiTips[Math.floor(Math.random() * aiTips.length)];
+
     setCurrentTip("Analyzing your productivity patterns...");
     setAiModalOpen(true);
-    
-    setTimeout(() => {
-      setCurrentTip(aiTips[Math.floor(Math.random() * aiTips.length)]);
-    }, 1500);
+    setTimeout(() => setCurrentTip(smartTip), 1500);
   };
+
+  // Chart Data Preparation
+  const chartData = [];
+  const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    chartData.push({ label: dayNames[d.getDay()], val: dailyLogs[formatDate(d)] || 0 });
+  }
+
+  const heatmapData = [];
+  const anchorDate = new Date();
+  const offsetSaturday = 6 - anchorDate.getDay();
+  const endSaturday = new Date(anchorDate);
+  endSaturday.setDate(anchorDate.getDate() + offsetSaturday);
+  const firstLogDateStr = Object.keys(dailyLogs).sort()[0] || todayStr;
+  const firstLogDate = new Date(firstLogDateStr);
+  const startSunday = new Date(firstLogDate);
+  startSunday.setDate(firstLogDate.getDate() - firstLogDate.getDay());
+  const totalDays = Math.round((endSaturday - startSunday) / (1000 * 60 * 60 * 24)) + 1;
+  for (let i = 0; i < Math.max(7, totalDays); i++) {
+    const d = new Date(startSunday); d.setDate(startSunday.getDate() + i);
+    const val = dailyLogs[formatDate(d)] || 0;
+    heatmapData.push({ date: d, value: d > anchorDate ? 0 : (val > 4 ? 4 : val), isFuture: d > anchorDate });
+  }
 
   const cpActions = {
     setTheme: (t) => setTheme(t),
     openAchievements: () => setAchievementsOpen(true),
     openSettings: () => setSettingsOpen(true),
-    startTimer: () => {
-      // This is a bit tricky without a ref to FocusTimer's internal state, 
-      // but we can signal it via a custom event or a shared state if needed.
-      // For now, let's just scroll to it.
-      const timer = document.querySelector('.focus-timer');
-      timer?.scrollIntoView({ behavior: 'smooth' });
-    },
+    startTimer: () => document.querySelector('.focus-timer')?.scrollIntoView({ behavior: 'smooth' }),
     focusAddHabit: () => {
       const input = document.querySelector('.add-habit-input');
-      input?.focus();
-      input?.scrollIntoView({ behavior: 'smooth' });
+      input?.focus(); input?.scrollIntoView({ behavior: 'smooth' });
     },
     toggleRecovery: () => setIsRecoveryMode(prev => !prev),
     getAiInsight: () => handleAiClick()
@@ -314,66 +310,49 @@ function App() {
         <div className="header-text">
           <h1>Kalyug Health Tracker</h1>
           <p style={{ color: 'var(--text-secondary)' }}>Building your legacy, one day at a time.</p>
-          <LevelSystem totalXP={totalXP} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '8px' }}>
+            <LevelSystem totalXP={totalXP} />
+            <div className={`quest-badge ${dailyQuest.completed ? 'completed' : ''}`}>
+              <Zap size={12} fill={dailyQuest.completed ? "white" : "currentColor"} />
+              Quest: {dailyQuest.category} {dailyQuest.completed ? 'Mastered' : 'Priority'}
+            </div>
+          </div>
         </div>
-        
         <div className="theme-toggles glass-panel" style={{ padding: '8px' }}>
           <button className="theme-btn" onClick={() => setAchievementsOpen(true)} title="Trophy Room"><Trophy size={18} /></button>
           <button className={`theme-btn ${theme === 'light' ? 'active' : ''}`} onClick={() => setTheme('light')}><Sun size={18} /></button>
           <button className={`theme-btn ${theme === 'dark' ? 'active' : ''}`} onClick={() => setTheme('dark')}><Moon size={18} /></button>
           <button className={`theme-btn ${theme === 'oled' ? 'active' : ''}`} onClick={() => setTheme('oled')}><Monitor size={18} /></button>
           <button className="theme-btn" onClick={() => setSettingsOpen(true)} title="Settings"><Settings size={18} /></button>
+          <button className={`theme-btn ${isZenMode ? 'active' : ''}`} onClick={() => setIsZenMode(!isZenMode)} title="Zen Mode" style={{ marginLeft: '12px', background: isZenMode ? 'var(--accent-primary)' : '', color: isZenMode ? 'white' : '' }}>
+            <Zap size={18} />
+          </button>
         </div>
       </header>
 
-      <motion.div 
-        className="dashboard-grid"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
+      <motion.div className="dashboard-grid" variants={containerVariants} initial="hidden" animate="visible">
         <div className="main-column">
           <motion.section variants={itemVariants} className="glass-panel">
             <h2 style={{ marginBottom: '20px', fontSize: '1.5rem' }}>Daily Actions</h2>
-            <TactileLog 
-              habits={habits} 
-              toggleHabit={toggleHabit} 
-              addHabit={addHabit}
-              deleteHabit={deleteHabit}
-              moveHabit={moveHabit}
-            />
+            <TactileLog habits={habits} toggleHabit={toggleHabit} addHabit={addHabit} deleteHabit={deleteHabit} moveHabit={moveHabit} />
           </motion.section>
-
           <motion.section variants={itemVariants} className="glass-panel">
             <h2 style={{ marginBottom: '20px', fontSize: '1.5rem' }}>Commitment Map</h2>
             <CommitmentMap data={heatmapData} />
           </motion.section>
-
           <motion.section variants={itemVariants} className="glass-panel">
             <DailyJournal todayStr={todayStr} />
           </motion.section>
         </div>
-
         <div className="side-column">
           <motion.section variants={itemVariants} className={`glass-panel ${isRecoveryMode ? 'recovery-mode-active' : ''}`}>
             <h2 style={{ marginBottom: '20px', fontSize: '1.5rem' }}>Insights</h2>
-            <InsightDashboard 
-              completedCount={completedCount} 
-              totalCount={totalCount} 
-              streaks={streaks}
-              chartData={chartData}
-              isRecoveryMode={isRecoveryMode}
-              setIsRecoveryMode={setIsRecoveryMode}
-              isProtected={protectedDays[todayStr]}
-              toggleBreakGlass={toggleBreakGlass}
-            />
+            <InsightDashboard habits={habits} completedCount={completedCount} totalCount={totalCount} streaks={streaks} chartData={chartData} isRecoveryMode={isRecoveryMode} setIsRecoveryMode={setIsRecoveryMode} isProtected={protectedDays[todayStr]} toggleBreakGlass={toggleBreakGlass} />
           </motion.section>
-
           <motion.section variants={itemVariants} className="glass-panel">
             <h2 style={{ marginBottom: '20px', fontSize: '1.2rem', textAlign: 'center' }}>Focus Timer</h2>
             <FocusTimer />
           </motion.section>
-
           <motion.section variants={itemVariants} className="glass-panel" style={{ padding: '16px' }}>
             <AmbientSounds />
           </motion.section>
@@ -387,13 +366,10 @@ function App() {
       <button className="fab fab-ai" onClick={handleAiClick}>✨</button>
       <button className={`fab fab-scroll ${showScroll ? 'visible' : ''}`} onClick={scrollToTop}>↑</button>
 
-      {/* AI Modal Overlay */}
       {aiModalOpen && (
         <div className="modal-overlay" onClick={() => setAiModalOpen(false)}>
           <div className="modal-content" style={{ maxWidth: '450px' }} onClick={e => e.stopPropagation()}>
-            <div className="ai-orb-container">
-              <div className="ai-orb"></div>
-            </div>
+            <div className="ai-orb-container"><div className="ai-orb"></div></div>
             <h2 className="modal-title">OS Intelligence</h2>
             <p className="typing-text" style={{ lineHeight: '1.6', fontSize: '1.1rem', marginBottom: '16px' }}>{currentTip}</p>
             <button className="modal-close-btn" onClick={() => setAiModalOpen(false)}>Acknowledge</button>
@@ -405,6 +381,36 @@ function App() {
       {achievementsOpen && <AchievementsModal onClose={() => setAchievementsOpen(false)} totalXP={totalXP} streaks={streaks} />}
       <CommandPalette isOpen={cpOpen} onClose={() => setCpOpen(false)} actions={cpActions} />
       {completedCount === totalCount && totalCount > 0 && <Confetti />}
+
+      <AnimatePresence>
+        {isZenMode && (
+          <motion.div className="zen-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <div className="zen-bg-animation"></div>
+            <button className="zen-exit-btn" onClick={() => setIsZenMode(false)}>Exit Zen</button>
+            <div className="zen-content">
+              <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}>
+                <h2 className="zen-title">Deep Focus</h2>
+                <FocusTimer />
+                <div style={{ marginTop: '40px', maxWidth: '300px', margin: '40px auto' }}><AmbientSounds /></div>
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="toast-container">
+        <AnimatePresence>
+          {toasts.map(toast => (
+            <motion.div key={toast.id} className="toast glass-panel" initial={{ opacity: 0, x: 100, scale: 0.8 }} animate={{ opacity: 1, x: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}>
+              <div className="toast-icon">{toast.icon}</div>
+              <div className="toast-content">
+                <div className="toast-title">{toast.title}</div>
+                <div className="toast-msg">{toast.message}</div>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
