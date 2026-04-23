@@ -88,6 +88,6 @@ Kalyug Health Tracker follows a **Glassmorphic OS** aesthetic:
 ---
 
 ## 📜 License
-Distributed under the MIT License. See `LICENSE` for more information.
+Distributed under the Apache-2.0 license. See `LICENSE` for more information.
 
 **Building your legacy, one day at a time.** 🕉️
