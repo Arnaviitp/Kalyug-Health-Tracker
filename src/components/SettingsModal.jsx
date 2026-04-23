@@ -6,13 +6,15 @@ export default function SettingsModal({ onClose }) {
       habits: localStorage.getItem('k-habits-v2'),
       logs: localStorage.getItem('k-dailylogs'),
       journal: localStorage.getItem('k-journal'),
-      theme: localStorage.getItem('k-theme')
+      theme: localStorage.getItem('k-theme'),
+      achievements: localStorage.getItem('k-unlocked-achievements'),
+      quest: localStorage.getItem('k-daily-quest')
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `kalyug-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `habitarc-backup-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -28,6 +30,8 @@ export default function SettingsModal({ onClose }) {
         if (data.logs) localStorage.setItem('k-dailylogs', data.logs);
         if (data.journal) localStorage.setItem('k-journal', data.journal);
         if (data.theme) localStorage.setItem('k-theme', data.theme);
+        if (data.achievements) localStorage.setItem('k-unlocked-achievements', data.achievements);
+        if (data.quest) localStorage.setItem('k-daily-quest', data.quest);
         window.location.reload();
       } catch {
         alert("Invalid backup file.");

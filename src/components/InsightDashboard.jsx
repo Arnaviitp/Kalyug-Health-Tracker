@@ -60,18 +60,27 @@ const InsightDashboard = ({
                 <stop offset="0%" stopColor="#3b82f6" />
                 <stop offset="100%" stopColor="#8b5cf6" />
               </linearGradient>
+              <filter id="glow">
+                <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+                <feMerge>
+                  <feMergeNode in="coloredBlur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
             </defs>
             <circle 
               className="progress-ring-circle-bg" 
               cx="70" cy="70" r="60" 
             />
             <motion.circle 
+              className="progress-ring-circle"
               cx="70" cy="70" r="60" 
               fill="transparent"
               stroke="url(#ring-gradient)"
               strokeWidth="10"
               strokeLinecap="round"
               strokeDasharray="377"
+              filter="url(#glow)"
               initial={{ strokeDashoffset: 377 }}
               animate={{ strokeDashoffset: offset }}
               transition={{ duration: 1.5, ease: "easeOut" }}
@@ -89,7 +98,17 @@ const InsightDashboard = ({
           </div>
         </div>
         {isProtected && (
-          <div className="streak-protected-badge">
+          <div className="streak-protected-badge" style={{ 
+            marginTop: '12px', 
+            fontSize: '0.7rem', 
+            color: 'var(--mercy-text)',
+            background: 'var(--mercy-bg)',
+            padding: '4px 8px',
+            borderRadius: '100px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}>
             <ShieldAlert size={12} /> STREAK PROTECTED
           </div>
         )}

@@ -7,14 +7,26 @@ export default function AmbientSounds() {
   const sourceRef = useRef(null);
   const gainRef = useRef(null);
 
+  const [volume, setVolume] = useState(0.5);
+
   const stopSound = () => {
     if (sourceRef.current) {
-        sourceRef.current.stop();
-        sourceRef.current.disconnect();
+        try {
+          sourceRef.current.stop();
+          sourceRef.current.disconnect();
+        } catch (e) {
+          // Already stopped or disconnected
+        }
         sourceRef.current = null;
     }
     setPlaying(null);
   };
+
+  useEffect(() => {
+    if (gainRef.current) {
+      gainRef.current.gain.setTargetAtTime(volume, audioCtxRef.current.currentTime, 0.1);
+    }
+  }, [volume]);
 
   const playBrownNoise = () => {
     if (!audioCtxRef.current) audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
@@ -39,7 +51,7 @@ export default function AmbientSounds() {
     noiseSource.loop = true;
     
     const gainNode = ctx.createGain();
-    gainNode.gain.value = 0.5;
+    gainNode.gain.value = volume;
     
     // Add lowpass filter for deep wind/noise
     const filter = ctx.createBiquadFilter();
@@ -75,7 +87,7 @@ export default function AmbientSounds() {
     noiseSource.loop = true;
     
     const gainNode = ctx.createGain();
-    gainNode.gain.value = 0.1;
+    gainNode.gain.value = volume * 0.2; // Rain is louder naturally
     
     const filter = ctx.createBiquadFilter();
     filter.type = 'lowpass';
@@ -116,12 +128,12 @@ export default function AmbientSounds() {
     modOsc.frequency.value = 0.1; 
     
     const modGain = ctx.createGain();
-    modGain.gain.value = 0.4;
+    modGain.gain.value = volume * 0.8;
     
     modOsc.connect(modGain);
     modGain.connect(gainNode.gain);
     
-    gainNode.gain.value = 0.5;
+    gainNode.gain.value = volume;
     
     const filter = ctx.createBiquadFilter();
     filter.type = 'lowpass';
@@ -154,7 +166,9 @@ export default function AmbientSounds() {
 
   useEffect(() => {
     return () => {
-        if (sourceRef.current) sourceRef.current.stop();
+        if (sourceRef.current) {
+          try { sourceRef.current.stop(); } catch(e) {}
+        }
         if (audioCtxRef.current) audioCtxRef.current.close();
     };
   }, []);
@@ -188,6 +202,23 @@ export default function AmbientSounds() {
         >
           <Waves size={24} />
         </button>
+      </div>
+
+      <div style={{ marginTop: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>VOL</span>
+        <input 
+          type="range" 
+          min="0" 
+          max="1" 
+          step="0.01" 
+          value={volume} 
+          onChange={(e) => setVolume(parseFloat(e.target.value))}
+          style={{ 
+            flex: 1,
+            accentColor: 'var(--accent-primary)',
+            cursor: 'pointer'
+          }}
+        />
       </div>
     </div>
   );

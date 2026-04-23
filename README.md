@@ -1,8 +1,8 @@
-# Kalyug Health Tracker 🕉️💪
+# HabitArc 🕉️💪
 
-**Kalyug Health Tracker** is a high-fidelity, premium, and gamified productivity command center designed to help you build your legacy one habit at a time. Built with a focus on aesthetics, immersion, and "juicy" user feedback, it transforms mundane task tracking into an immersive "OS" experience.
+**HabitArc** is a high-fidelity, premium, and gamified productivity command center designed to help you build your legacy one habit at a time. Built with a focus on aesthetics, immersion, and "juicy" user feedback, it transforms mundane task tracking into an immersive "OS" experience.
 
-![Kalyug Health Tracker](https://img.shields.io/badge/Aesthetic-High--Fidelity-blueviolet?style=for-the-badge)
+![HabitArc](https://img.shields.io/badge/Aesthetic-High--Fidelity-blueviolet?style=for-the-badge)
 ![React](https://img.shields.io/badge/Built%20with-React-61DAFB?style=for-the-badge&logo=react)
 ![Vite](https://img.shields.io/badge/Powered%20by-Vite-646CFF?style=for-the-badge&logo=vite)
 
@@ -34,7 +34,7 @@
 ---
 
 ## 🎨 Design Philosophy
-Kalyug Health Tracker follows a **Glassmorphic OS** aesthetic:
+HabitArc follows a **Glassmorphic OS** aesthetic:
 - **Rich Aesthetics**: Smooth gradients, vibrant accent colors, and deep glass-panel depth.
 - **Adaptive Themes**: Seamlessly switch between **Dark**, **Light**, and **OLED (Pure Black)** modes.
 - **Micro-Animations**: Powered by **Framer Motion** for staggered entrances, tactile button feedback, and "juicy" progress updates.
@@ -50,11 +50,11 @@ Kalyug Health Tracker follows a **Glassmorphic OS** aesthetic:
 ### Installation
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/kalyug-health-tracker.git
+   git clone https://github.com/your-username/habitarc.git
    ```
 2. Navigate to the project directory:
    ```bash
-   cd kalyug-health-tracker
+   cd habitarc
    ```
 3. Install dependencies:
    ```bash

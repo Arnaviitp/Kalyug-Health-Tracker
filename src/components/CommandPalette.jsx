@@ -16,6 +16,7 @@ export default function CommandPalette({ isOpen, onClose, actions }) {
     { id: 'start-timer', label: 'Start Focus Timer', icon: <Play size={18} />, action: () => actions.startTimer(), category: 'Productivity' },
     { id: 'add-habit', label: 'Add New Habit', icon: <Plus size={18} />, action: () => actions.focusAddHabit(), category: 'Productivity' },
     { id: 'toggle-recovery', label: 'Toggle Recovery Mode', icon: <Shield size={18} />, action: () => actions.toggleRecovery(), category: 'System' },
+    { id: 'toggle-zen', label: 'Toggle Zen Mode', icon: <Zap size={18} />, action: () => actions.toggleZen(), category: 'System' },
     { id: 'ai-insight', label: 'Get AI Insight', icon: <Zap size={18} />, action: () => actions.getAiInsight(), category: 'System' },
   ];
 

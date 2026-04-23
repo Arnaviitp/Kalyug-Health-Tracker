@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { Play, Pause, RotateCcw, Maximize2, Minimize2, Volume2, VolumeX } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Play, Pause, RotateCcw, Volume2, VolumeX } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const FOCUS_QUOTES = [
@@ -41,11 +40,11 @@ export default function FocusTimer() {
       
       let blinks = 0;
       const blinkInterval = setInterval(() => {
-        document.title = blinks % 2 === 0 ? "🔔 TIME'S UP!" : "Kalyug Health Tracker";
+        document.title = blinks % 2 === 0 ? "🔔 TIME'S UP!" : "HabitArc";
         blinks++;
         if (blinks > 10) {
           clearInterval(blinkInterval);
-          document.title = "Kalyug Health Tracker";
+          document.title = "HabitArc";
         }
       }, 500);
     }
@@ -60,12 +59,12 @@ export default function FocusTimer() {
         setQuoteIndex(prev => (prev + 1) % FOCUS_QUOTES.length);
       }
     } else {
-      document.title = "Kalyug Health Tracker";
+      document.title = "HabitArc";
     }
 
     return () => {
       clearInterval(interval);
-      document.title = "Kalyug Health Tracker";
+      document.title = "HabitArc";
     };
   }, [isActive, timeLeft, soundEnabled]);
 
@@ -89,72 +88,35 @@ export default function FocusTimer() {
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
 
-  const timerControls = (isZen) => (
+  const timerControls = () => (
     <>
-      {!isZen && (
-        <div className="timer-modes">
-          <button className={`mode-btn ${mode === 'pomodoro' ? 'active' : ''}`} onClick={() => changeMode('pomodoro')}>Pomodoro</button>
-          <button className={`mode-btn ${mode === 'shortBreak' ? 'active' : ''}`} onClick={() => changeMode('shortBreak')}>Break</button>
-        </div>
-      )}
+      <div className="timer-modes">
+        <button className={`mode-btn ${mode === 'pomodoro' ? 'active' : ''}`} onClick={() => changeMode('pomodoro')}>Pomodoro</button>
+        <button className={`mode-btn ${mode === 'shortBreak' ? 'active' : ''}`} onClick={() => changeMode('shortBreak')}>Break</button>
+        <button className={`mode-btn ${mode === 'longBreak' ? 'active' : ''}`} onClick={() => changeMode('longBreak')}>Long Break</button>
+      </div>
       
-      <div className={`timer-display ${isActive ? 'active' : ''} ${isZen ? 'zen' : ''}`}>
+      <div className={`timer-display ${isActive ? 'active' : ''}`}>
         {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
       </div>
       
-      {isZen && (
-        <motion.p 
-          className="zen-quote"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          key={quoteIndex}
-        >
-          {FOCUS_QUOTES[quoteIndex]}
-        </motion.p>
-      )}
-
       <div className="timer-controls">
-        <button className="control-btn play-pause" onClick={toggleTimer}>
-          {isActive ? <Pause size={isZen ? 32 : 24} /> : <Play size={isZen ? 32 : 24} />}
+        <button className="control-btn play-pause" onClick={toggleTimer} aria-label={isActive ? "Pause" : "Start"}>
+          {isActive ? <Pause size={24} /> : <Play size={24} />}
         </button>
-        <button className="control-btn restart" onClick={resetTimer}>
-          <RotateCcw size={isZen ? 28 : 20} />
+        <button className="control-btn restart" onClick={resetTimer} aria-label="Reset Timer">
+          <RotateCcw size={20} />
         </button>
-        <button className="control-btn sound" onClick={() => setSoundEnabled(!soundEnabled)}>
-          {soundEnabled ? <Volume2 size={isZen ? 28 : 20} /> : <VolumeX size={isZen ? 28 : 20} />}
+        <button className="control-btn sound" onClick={() => setSoundEnabled(!soundEnabled)} aria-label={soundEnabled ? "Disable Sound" : "Enable Sound"}>
+          {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
         </button>
       </div>
-
-      <button className={`zen-mode-btn ${isZen ? 'exit' : ''}`} onClick={() => setZenMode(!zenMode)}>
-        {isZen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-        {isZen ? 'Exit Focus State' : 'Zen Focus'}
-      </button>
     </>
   );
 
   return (
     <div className="focus-timer">
-      {timerControls(false)}
-
-      {mounted && createPortal(
-        <AnimatePresence>
-          {zenMode && (
-            <motion.div 
-              className="zen-mode-overlay"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.4 }}
-            >
-              <div className="zen-bg-glow"></div>
-              <div className="zen-content">
-                {timerControls(true)}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>,
-        document.body
-      )}
+      {timerControls()}
     </div>
   );
 }
