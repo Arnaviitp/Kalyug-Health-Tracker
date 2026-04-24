@@ -244,6 +244,16 @@ function App() {
         e.preventDefault();
         setCpOpen(true);
       }
+      if (e.key === 'z' || e.key === 'Z') {
+        if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+          setIsZenMode(prev => !prev);
+        }
+      }
+      if (e.shiftKey && (e.key === 'a' || e.key === 'A')) {
+        if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+          handleAiClick();
+        }
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -372,21 +382,21 @@ function App() {
       "Analyzing daily patterns...",
       "Synthesizing actionable insights...",
       "Correlating streak data...",
+      "Optimizing cognitive load...",
+      "Syncing with HabitArc OS...",
       smartTip
     ];
 
     let i = 0;
     const interval = setInterval(() => {
       if (i < steps.length - 1) {
-        if (Math.random() > 0.4 || i === 0 || i === steps.length - 2) {
-            setCurrentTip(steps[i]);
-        }
+        setCurrentTip(steps[i]);
         i++;
       } else {
         setCurrentTip(steps[i]);
         clearInterval(interval);
       }
-    }, 400);
+    }, 600);
   };
 
 
@@ -475,6 +485,25 @@ function App() {
           <motion.section variants={itemVariants} className="glass-panel" style={{ padding: '16px' }}>
             <AmbientSounds />
           </motion.section>
+          <motion.section variants={itemVariants} className="glass-panel command-center-info">
+            <h3 style={{ fontSize: '0.9rem', color: 'var(--accent-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Zap size={14} /> Command Center
+            </h3>
+            <div className="shortcut-list">
+              <div className="shortcut-item">
+                <span className="shortcut-label">Command Palette</span>
+                <kbd className="shortcut-key">Ctrl + K</kbd>
+              </div>
+              <div className="shortcut-item">
+                <span className="shortcut-label">Toggle Zen Mode</span>
+                <kbd className="shortcut-key">Z</kbd>
+              </div>
+              <div className="shortcut-item">
+                <span className="shortcut-label">Neural Log</span>
+                <kbd className="shortcut-key">Shift + A</kbd>
+              </div>
+            </div>
+          </motion.section>
         </div>
       </motion.div>
 
@@ -487,19 +516,28 @@ function App() {
 
       {aiModalOpen && (
         <div className="modal-overlay" onClick={() => setAiModalOpen(false)}>
-          <div className="modal-content" style={{ maxWidth: '450px' }} onClick={e => e.stopPropagation()}>
-            <div className="ai-orb-container"><div className="ai-orb"></div></div>
-            <h2 className="modal-title">OS Intelligence</h2>
-            <p className="typing-text" style={{ lineHeight: '1.6', fontSize: '1.1rem', marginBottom: '24px', minHeight: '80px' }}>{currentTip}</p>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button className="modal-close-btn" onClick={() => setAiModalOpen(false)} style={{ flex: 1 }}>Acknowledge</button>
+          <div className="modal-content ai-modal-premium" style={{ maxWidth: '500px' }} onClick={e => e.stopPropagation()}>
+            <div className="ai-orb-container">
+              <div className="ai-orb"></div>
+              <div className="ai-orb-ring"></div>
+              <div className="ai-orb-ring"></div>
+            </div>
+            <h2 className="modal-title" style={{ letterSpacing: '3px', color: 'var(--accent-primary)' }}>NEURAL SYNC</h2>
+            <div className="neural-sync-progress">
+              {currentTip.includes('...') && <motion.div className="neural-sync-bar" initial={{ width: 0 }} animate={{ width: '100%' }} transition={{ duration: 3 }} />}
+            </div>
+            <p className="typing-text" style={{ lineHeight: '1.7', fontSize: '1.15rem', marginBottom: '32px', minHeight: '100px', fontWeight: '300' }}>
+              {currentTip}
+            </p>
+            <div style={{ display: 'flex', gap: '16px' }}>
+              <button className="modal-close-btn premium" onClick={() => setAiModalOpen(false)} style={{ flex: 1 }}>Acknowledge</button>
               {completedCount < totalCount && (
                 <button 
-                  className="modal-close-btn" 
+                  className="modal-close-btn premium highlighted" 
                   onClick={() => { setAiModalOpen(false); setIsZenMode(true); }}
-                  style={{ flex: 1, background: 'var(--accent-primary)', color: 'white' }}
+                  style={{ flex: 1.2 }}
                 >
-                  Enter Zen Mode
+                  <Zap size={16} /> Initiate Zen
                 </button>
               )}
             </div>

@@ -1,4 +1,4 @@
-import { Flame, Trophy, ShieldAlert, Heart, Activity, CheckCircle2 } from 'lucide-react';
+import { Flame, Trophy, ShieldAlert, Heart, Activity, CheckCircle2, Zap, BrainCircuit, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const InsightDashboard = ({ 
@@ -13,7 +13,6 @@ const InsightDashboard = ({
   toggleBreakGlass
 }) => {
   const progressPercent = totalCount === 0 ? 0 : completedCount / totalCount;
-  // 377 is the stroke-dasharray roughly 2 * pi * 60
   const offset = 377 - (377 * progressPercent);
 
   const containerVariants = {
@@ -31,10 +30,10 @@ const InsightDashboard = ({
   };
 
   const categories = [
-    { id: 'physical', label: 'Physical', color: '#ef4444' },
-    { id: 'mental', label: 'Mental', color: '#8b5cf6' },
-    { id: 'work', label: 'Work', color: '#3b82f6' },
-    { id: 'soul', label: 'Soul', color: '#f59e0b' },
+    { id: 'physical', label: 'Physical', color: '#ef4444', icon: <Heart size={12} /> },
+    { id: 'mental', label: 'Mental', color: '#8b5cf6', icon: <BrainCircuit size={12} /> },
+    { id: 'work', label: 'Work', color: '#3b82f6', icon: <TrendingUp size={12} /> },
+    { id: 'soul', label: 'Soul', color: '#f59e0b', icon: <Zap size={12} /> },
   ];
 
   const categoryStats = categories.map(cat => {
@@ -133,6 +132,20 @@ const InsightDashboard = ({
         </motion.div>
       </div>
 
+      {/* Neural Prophecy Card */}
+      <motion.div variants={itemVariants} className="prophecy-card glass-panel">
+        <div className="prophecy-header">
+          <BrainCircuit size={16} />
+          <span>Neural Prophecy</span>
+        </div>
+        <p className="prophecy-text">
+          {progressPercent > 0.8 ? 
+            "The stars align with your discipline. A major breakthrough in your 'Work' sector is predicted within 48 hours." :
+            "Your energy patterns show subtle fluctuations. Realigning with 'Physical' habits will stabilize your cognitive output."
+          }
+        </p>
+      </motion.div>
+
       {/* Weekly Activity Bar Chart */}
       <motion.div variants={itemVariants} className="activity-section">
         <h3 className="section-title">
@@ -156,14 +169,16 @@ const InsightDashboard = ({
         </div>
       </motion.div>
 
-      {/* Balance Visualizer (Radar-lite) */}
+      {/* Balance Visualizer */}
       <motion.div variants={itemVariants} className="balance-section">
         <h3 className="section-title">Life Balance</h3>
         <div className="balance-grid">
           {categoryStats.map(cat => (
             <div key={cat.id} className="balance-item">
               <div className="balance-label-row">
-                <span>{cat.label}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  {cat.icon} {cat.label}
+                </span>
                 <span>{Math.round(cat.score)}%</span>
               </div>
               <div className="balance-bar-bg">
