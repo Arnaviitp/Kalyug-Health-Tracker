@@ -1,43 +1,41 @@
 # HabitArc 🕉️💪
 
-**HabitArc** is a high-fidelity, premium, and gamified productivity command center designed to help you build your legacy one habit at a time. Built with a focus on aesthetics, immersion, and "juicy" user feedback, it transforms mundane task tracking into an immersive "OS" experience.
+**HabitArc** is a high-fidelity, premium, and gamified productivity command center designed to help you sculpt your destiny one habit at a time. Built with a focus on deep aesthetics, fluid micro-interactions, and professional-grade feedback, it transforms habit tracking into a state-of-the-art "OS" experience.
 
 ![HabitArc](https://img.shields.io/badge/Aesthetic-High--Fidelity-blueviolet?style=for-the-badge)
 ![React](https://img.shields.io/badge/Built%20with-React-61DAFB?style=for-the-badge&logo=react)
 ![Vite](https://img.shields.io/badge/Powered%20by-Vite-646CFF?style=for-the-badge&logo=vite)
+![Design](https://img.shields.io/badge/Style-Curved%20%26%20Fluid-FF69B4?style=for-the-badge)
 
 ---
 
 ## ✨ Key Features
 
-### 🎮 Gamified Productivity
-- **Level & XP System**: Earn XP for every habit completed. Watch your level grow as you build consistency.
-- **Dynamic Streaks**: Track your daily momentum with a robust streak system that celebrates your "Longest Streak" and "Current Streak."
-- **Achievements**: Unlock specialized badges for milestones like "10-Day Streak" or "Midnight Warrior."
+### 🎮 Gamified Ecosystem
+- **Neural Level System**: Earn XP for every habit completed. Watch your level grow from *Novice* to *Eternal* with a custom-designed RPG-style progress bar.
+- **Dynamic Streaks**: Track your momentum with a robust streak system that calculates your "Vitality Score" and celebrates consistency.
+- **Achievements & Badges**: Unlock high-fidelity badges for milestones like "Midnight Warrior" or "Deep Work Master."
 
-### 🛡️ Streak Architecture (Mercy System)
-- **Break Glass**: A unique "streak protection" system for those difficult days. "Break the glass" to preserve your streak even when life gets in the way.
-- **Recovery Mode**: Activate a high-contrast, motivational UI specifically designed to pull you out of a productivity slump.
+### 🧠 Neural Sync (AI Assistant)
+- **Neural Prophecy**: An advanced insight engine that analyzes your productivity patterns to predict future performance and provide motivational "prophecies."
+- **Animated AI Sync**: Features a kinetic "Neural Orb" interface that visualizes data synchronization in real-time.
 
-### 🧘 Zen Mode & Immersion
-- **Zen Focus Timer**: A full-screen, distraction-free Pomodoro timer with immersive ambient backgrounds and rotating motivational quotes.
-- **Ambient Soundscapes**: Built-in sound machine featuring Brown Noise, Rain, Forest, and Deep Space tracks to aid focus.
+### 🛡️ Resilience Architecture
+- **Streak Shield (Mercy System)**: Protect your momentum on high-friction days by "breaking the glass" to preserve your streaks.
+- **Recovery Mode**: A specialized high-contrast UI designed to pull you out of productivity slumps with prioritized motivational focus.
 
-### ⌨️ Command Palette
-- **Power User Shortcuts**: Press `Ctrl + K` (or `Cmd + K`) to trigger the global command palette. Switch themes, toggle Zen mode, or ask for AI insights instantly without leaving your keyboard.
-
-### 📊 OS Intelligence
-- **Productivity Dashboard**: High-fidelity data visualization including a Progress Ring for daily completion and a Weekly Activity bar chart.
-- **Commitment Map**: A GitHub-style activity heatmap that tracks your consistency over the long term.
-- **Daily Reflection**: A premium journal system for end-of-day gratitude and learning.
+### 🧘 Focus Chamber (Zen Mode)
+- **Immersive Timer**: A full-screen Focus Chamber with "Breathing" visualizers, deep glassmorphism, and ambient soundscapes.
+- **Ambient Audio**: Integrated sound engine featuring *Brown Noise*, *Cinematic Rain*, *Forest Echo*, and *Deep Space*.
 
 ---
 
 ## 🎨 Design Philosophy
-HabitArc follows a **Glassmorphic OS** aesthetic:
-- **Rich Aesthetics**: Smooth gradients, vibrant accent colors, and deep glass-panel depth.
-- **Adaptive Themes**: Seamlessly switch between **Dark**, **Light**, and **OLED (Pure Black)** modes.
-- **Micro-Animations**: Powered by **Framer Motion** for staggered entrances, tactile button feedback, and "juicy" progress updates.
+HabitArc 2.0 follows a **"Curved & Fluid"** aesthetic:
+- **Premium Typography**: Driven by **Outfit** and **Plus Jakarta Sans** for maximum readability and a professional tech feel.
+- **Deep Glassmorphism**: Cards feature `backdrop-filter: blur(20px)` with 1px border highlights and saturation-optimized background blends.
+- **Fluid Curvature**: Every interaction uses pill-shaped geometry (`borderRadius: 100px`) and "squircled" badges for a cohesive, modern look.
+- **Juicy Feedback**: Powered by **Framer Motion**—staggered entrances, springy habit pops, and "dopamine-hit" confetti bursts.
 
 ---
 
@@ -50,11 +48,11 @@ HabitArc follows a **Glassmorphic OS** aesthetic:
 ### Installation
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/habitarc.git
+   git clone https://github.com/Arnaviitp/Kalyug-Health-Tracker.git
    ```
 2. Navigate to the project directory:
    ```bash
-   cd habitarc
+   cd Kalyug-Health-Tracker
    ```
 3. Install dependencies:
    ```bash
@@ -69,10 +67,9 @@ HabitArc follows a **Glassmorphic OS** aesthetic:
 
 ## 🛠️ Tech Stack
 - **Framework**: [React 18](https://reactjs.org/)
-- **Build Tool**: [Vite](https://vitejs.dev/)
 - **Animations**: [Framer Motion](https://www.framer.com/motion/)
 - **Icons**: [Lucide React](https://lucide.dev/)
-- **Styling**: Vanilla CSS (CSS Variables & Modern Flex/Grid)
+- **Styling**: Vanilla CSS (Modern CSS Variables & Glassmorphism)
 - **Confetti**: `canvas-confetti`
 
 ---
@@ -80,14 +77,14 @@ HabitArc follows a **Glassmorphic OS** aesthetic:
 ## 🎹 Keyboard Shortcuts
 | Shortcut | Action |
 | :--- | :--- |
-| `Ctrl + K` | Open Command Palette |
-| `Z` | Toggle Zen Mode |
-| `T` | Cycle Themes |
-| `Esc` | Close Modals / Palettes |
+| `Ctrl + K` | Global Command Palette |
+| `Z` | Initiate Focus Chamber |
+| `T` | Cycle UI Themes |
+| `Esc` | Collapse Modals / Palettes |
 
 ---
 
 ## 📜 License
 Distributed under the Apache-2.0 license. See `LICENSE` for more information.
 
-**Building your legacy, one day at a time.** 🕉️
+**Sculpting your destiny, one day at a time.** 🕉️
