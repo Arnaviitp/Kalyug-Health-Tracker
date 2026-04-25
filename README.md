@@ -31,7 +31,7 @@
 ---
 
 ## 🎨 Design Philosophy
-HabitArc 2.0 follows a **"Curved & Fluid"** aesthetic:
+HabitArc follows a **"Curved & Fluid"** aesthetic:
 - **Premium Typography**: Driven by **Outfit** and **Plus Jakarta Sans** for maximum readability and a professional tech feel.
 - **Deep Glassmorphism**: Cards feature `backdrop-filter: blur(20px)` with 1px border highlights and saturation-optimized background blends.
 - **Fluid Curvature**: Every interaction uses pill-shaped geometry (`borderRadius: 100px`) and "squircled" badges for a cohesive, modern look.
