@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Moon, Sun, Monitor, Plus, Settings, Trophy, Zap, Check, Minimize2 } from 'lucide-react';
+import { Moon, Sun, Monitor, Plus, Settings, Trophy, Zap, Check, Minimize2, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import TactileLog from './components/TactileLog';
 import CommitmentMap from './components/CommitmentMap';
@@ -69,6 +69,17 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [achievementsOpen, setAchievementsOpen] = useState(false);
   const [cpOpen, setCpOpen] = useState(false);
+  const [addHabitOpen, setAddHabitOpen] = useState(false);
+
+  // --- Focus Timer State (Lifted) ---
+  const [timerTimeLeft, setTimerTimeLeft] = useState(25 * 60);
+  const [timerIsActive, setTimerIsActive] = useState(false);
+  const [timerMode, setTimerMode] = useState('pomodoro'); // pomodoro, shortBreak, longBreak
+  const [timerSoundEnabled, setTimerSoundEnabled] = useState(true);
+  const [timerHistory, setTimerHistory] = useState(() => {
+    const saved = localStorage.getItem('k-focus-history');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   // Daily Quest Initialization
   const [dailyQuest, setDailyQuest] = useState(() => {
@@ -92,55 +103,70 @@ function App() {
   const completedCount = habits.filter(h => h.completed).length;
   const totalCount = habits.length;
   const totalCompletedEver = Object.values(dailyLogs).reduce((a, b) => a + (b || 0), 0);
+
+  const streaks = useMemo(() => {
+    const dates = Object.keys(dailyLogs).sort();
+    if (dates.length === 0) return { currentStreak: 0, longestStreak: 0 };
+    
+    let current = 0;
+    let longest = 0;
+    let temp = 0;
+    
+    // Simple streak logic
+    const today = new Date(todayStr);
+    let checkDate = new Date(today);
+    
+    while (dailyLogs[formatDate(checkDate)] > 0) {
+      current++;
+      checkDate.setDate(checkDate.getDate() - 1);
+    }
+    
+    // Longest calculation
+    let lastDate = null;
+    dates.forEach(d => {
+      if (!lastDate) {
+        temp = 1;
+      } else {
+        const diff = (new Date(d) - new Date(lastDate)) / (1000 * 60 * 60 * 24);
+        if (diff === 1) temp++;
+        else temp = 1;
+      }
+      longest = Math.max(longest, temp);
+      lastDate = d;
+    });
+    
+    return { currentStreak: current, longestStreak: longest };
+  }, [dailyLogs, todayStr]);
+  
+  // Productivity Score Calculation
+  const productivityScore = useMemo(() => {
+    const habitScore = totalCount === 0 ? 0 : (completedCount / totalCount) * 60;
+    const streakBonus = Math.min(streaks.currentStreak * 2, 20);
+    const questBonus = dailyQuest.completed ? 20 : 0;
+    return Math.round(habitScore + streakBonus + questBonus);
+  }, [completedCount, totalCount, streaks.currentStreak, dailyQuest.completed]);
+
   let totalXP = totalCompletedEver * 10;
   if (dailyQuest.completed) totalXP += 50;
+
+  const aiProphecy = useMemo(() => {
+    if (totalCount === 0) return null;
+    const progress = completedCount / totalCount;
+    const lowCategories = ['physical', 'mental', 'work', 'soul'].filter(cat => 
+      habits.some(h => h.category === cat) && !habits.find(h => h.category === cat && h.completed)
+    );
+
+    if (progress === 1) return "System Overload: Perfection detected. Your cognitive baseline has shifted upwards. Expect a surge in creative clarity tomorrow.";
+    if (progress > 0.7) return `The stars align with your discipline. A major breakthrough in your ${lowCategories[0] || 'Work'} sector is predicted within 48 hours.`;
+    if (lowCategories.includes('physical')) return "Your bio-rhythms show subtle fluctuations. Realigning with 'Physical' habits will stabilize your neural output.";
+    if (lowCategories.includes('mental')) return "Mental clarity is currently throttled. A brief meditation or reading session will unlock 15% more focus.";
+    return "Neural patterns are stabilizing. Consistency is your greatest multiplier. Stay the course.";
+  }, [completedCount, totalCount, habits]);
 
   // Level tracking state (needs totalXP for initial value)
   const [lastLevel, setLastLevel] = useState(() => Math.floor(Math.sqrt(totalXP / 50)) + 1);
 
   // --- Derived Data (Memoized) ---
-  const streaks = useMemo(() => {
-    const datesWithLogs = Object.keys(dailyLogs).filter(k => dailyLogs[k] > 0 || protectedDays[k]).sort();
-    let currentStreak = 0;
-    let longestStreak = 0;
-    
-    if (datesWithLogs.length > 0) {
-      let d = new Date();
-      // If today is not completed and not protected, check from yesterday
-      if ((!dailyLogs[todayStr] || dailyLogs[todayStr] === 0) && !protectedDays[todayStr]) {
-        d.setDate(d.getDate() - 1);
-      }
-      
-      while (true) {
-        const dStr = formatDate(d);
-        if (dailyLogs[dStr] > 0 || protectedDays[dStr]) {
-          currentStreak++;
-          d.setDate(d.getDate() - 1);
-        } else break;
-      }
-
-      let tempStreak = 0;
-      let sortedDates = [...datesWithLogs];
-      if (sortedDates.length > 0) {
-        tempStreak = 1;
-        longestStreak = 1;
-        for (let i = 1; i < sortedDates.length; i++) {
-          const prev = new Date(sortedDates[i-1]);
-          const curr = new Date(sortedDates[i]);
-          const diff = Math.round((curr - prev) / (1000 * 60 * 60 * 24));
-          if (diff === 1) {
-            tempStreak++;
-          } else {
-            longestStreak = Math.max(longestStreak, tempStreak);
-            tempStreak = 1;
-          }
-        }
-        longestStreak = Math.max(longestStreak, tempStreak);
-      }
-      longestStreak = Math.max(longestStreak, currentStreak);
-    }
-    return { currentStreak, longestStreak };
-  }, [dailyLogs, protectedDays, todayStr]);
 
   const chartData = useMemo(() => {
     const data = [];
@@ -312,6 +338,22 @@ function App() {
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
+  const scrollToSection = (id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      const offset = 100;
+      const bodyRect = document.body.getBoundingClientRect().top;
+      const elementRect = el.getBoundingClientRect().top;
+      const elementPosition = elementRect - bodyRect;
+      const offsetPosition = elementPosition - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  };
+
 
   const handleAiClick = () => {
     const aiTips = [
@@ -369,7 +411,8 @@ function App() {
     const lastAiTime = window._lastAiTime || 0;
     const now = Date.now();
     window._lastAiTime = now;
-    const skipProcessing = now - lastAiTime < 30000; // Skip if clicked in last 30s
+    const skipProcessing = now - (window._lastAiTimeLong || 0) < 60000; // Skip long animation if clicked in last 60s
+    window._lastAiTimeLong = now;
 
     if (skipProcessing) {
       setCurrentTip(smartTip);
@@ -380,8 +423,9 @@ function App() {
     const steps = [
       "Accessing neural logs...",
       "Analyzing daily patterns...",
+      `Current Sync: ${productivityScore}% Efficiency`,
       "Synthesizing actionable insights...",
-      "Correlating streak data...",
+      `Correlating ${streaks.currentStreak}-day streak data...`,
       "Optimizing cognitive load...",
       "Syncing with HabitArc OS...",
       smartTip
@@ -404,11 +448,7 @@ function App() {
     setTheme: (t) => setTheme(t),
     openAchievements: () => setAchievementsOpen(true),
     openSettings: () => setSettingsOpen(true),
-    startTimer: () => document.querySelector('.focus-timer')?.scrollIntoView({ behavior: 'smooth' }),
-    focusAddHabit: () => {
-      const input = document.querySelector('.add-habit-input');
-      input?.focus(); input?.scrollIntoView({ behavior: 'smooth' });
-    },
+    scrollToSection: (id) => scrollToSection(id),
     toggleRecovery: () => setIsRecoveryMode(prev => !prev),
     getAiInsight: () => handleAiClick(),
     toggleZen: () => setIsZenMode(prev => !prev)
@@ -425,125 +465,252 @@ function App() {
 
   return (
     <div className="app-container">
-      <header className="header">
+      <header className="header" style={{ marginBottom: '24px' }}>
         <div className="header-text">
-          <h1>HabitArc</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Building your legacy, one day at a time.</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '12px' }}>
+          <motion.h1 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            HabitArc
+          </motion.h1>
+          <motion.p 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            style={{ color: 'var(--text-secondary)', fontSize: '1rem', fontWeight: '400' }}
+          >
+            Sculpt your destiny, one habit at a time.
+          </motion.p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '20px' }}>
             <LevelSystem totalXP={totalXP} />
             <motion.div 
               className={`quest-badge ${dailyQuest.completed ? 'completed' : ''}`}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.02, translateY: -2 }}
+              whileTap={{ scale: 0.98 }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3 }}
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '12px', 
+                padding: '10px 20px', 
+                borderRadius: '100px',
+                background: dailyQuest.completed ? 'var(--success-color)' : 'rgba(var(--bg-primary-rgb), 0.5)',
+                color: dailyQuest.completed ? 'white' : 'var(--text-primary)',
+                border: dailyQuest.completed ? 'none' : '1px solid var(--glass-border)',
+                boxShadow: dailyQuest.completed ? '0 8px 20px var(--success-glow)' : 'none'
+              }}
             >
-              <div className="quest-icon">
+              <div className="quest-icon" style={{ 
+                width: '24px', 
+                height: '24px', 
+                borderRadius: '50%', 
+                background: dailyQuest.completed ? 'rgba(255,255,255,0.2)' : 'var(--accent-glow)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: dailyQuest.completed ? 'white' : 'var(--accent-primary)'
+              }}>
                 {dailyQuest.completed ? <Trophy size={14} /> : <Zap size={14} />}
               </div>
-              <div className="quest-details">
-                <span className="quest-label">DAILY QUEST</span>
-                <span className="quest-name">{dailyQuest.category.toUpperCase()} MASTER</span>
+              <div className="quest-details" style={{ display: 'flex', flexDirection: 'column' }}>
+                <span className="quest-label" style={{ fontSize: '0.65rem', fontWeight: '800', opacity: 0.8, letterSpacing: '1px' }}>DAILY QUEST</span>
+                <span className="quest-name" style={{ fontSize: '0.8rem', fontWeight: '700' }}>{dailyQuest.category.toUpperCase()} MASTER</span>
               </div>
-              {dailyQuest.completed && <Check size={14} className="quest-check" />}
+              {dailyQuest.completed && <Check size={16} className="quest-check" strokeWidth={3} />}
             </motion.div>
           </div>
         </div>
-        <div className="theme-toggles glass-panel" style={{ padding: '8px' }}>
+        <div className="theme-toggles glass-panel" style={{ padding: '8px', gap: '4px' }}>
           <button className="theme-btn" onClick={() => setAchievementsOpen(true)} title="Trophy Room"><Trophy size={18} /></button>
+          <div style={{ width: '1px', height: '24px', background: 'var(--glass-border)', margin: '0 8px' }}></div>
           <button className={`theme-btn ${theme === 'light' ? 'active' : ''}`} onClick={() => setTheme('light')}><Sun size={18} /></button>
           <button className={`theme-btn ${theme === 'dark' ? 'active' : ''}`} onClick={() => setTheme('dark')}><Moon size={18} /></button>
           <button className={`theme-btn ${theme === 'oled' ? 'active' : ''}`} onClick={() => setTheme('oled')}><Monitor size={18} /></button>
+          <div style={{ width: '1px', height: '24px', background: 'var(--glass-border)', margin: '0 8px' }}></div>
           <button className="theme-btn" onClick={() => setSettingsOpen(true)} title="Settings"><Settings size={18} /></button>
-          <button className={`theme-btn ${isZenMode ? 'active' : ''}`} onClick={() => setIsZenMode(!isZenMode)} title="Zen Mode" style={{ marginLeft: '12px', background: isZenMode ? 'var(--accent-primary)' : '', color: isZenMode ? 'white' : '' }}>
+          <motion.button 
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            className={`theme-btn ${isZenMode ? 'active' : ''}`} 
+            onClick={() => setIsZenMode(!isZenMode)} 
+            title="Initiate Zen" 
+            style={{ marginLeft: '8px', background: isZenMode ? 'var(--accent-primary)' : 'rgba(var(--accent-primary), 0.1)', color: isZenMode ? 'white' : 'var(--accent-primary)' }}
+          >
             <Zap size={18} />
-          </button>
+          </motion.button>
         </div>
       </header>
 
-      <motion.div className="dashboard-grid" variants={containerVariants} initial="hidden" animate="visible">
+      <motion.div 
+        className="dashboard-grid" 
+        variants={containerVariants} 
+        initial="hidden" 
+        animate="visible"
+      >
         <div className="main-column">
-          <motion.section variants={itemVariants} className="glass-panel">
-            <h2 style={{ marginBottom: '20px', fontSize: '1.5rem' }}>Daily Actions</h2>
+          <motion.section id="habits-section" variants={itemVariants} className="glass-panel">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: '800' }}>Daily Actions</h2>
+              <div style={{ padding: '4px 12px', background: 'var(--accent-glow)', color: 'var(--accent-primary)', borderRadius: '100px', fontSize: '0.8rem', fontWeight: '700' }}>
+                {completedCount}/{totalCount} COMPLETED
+              </div>
+            </div>
             <TactileLog habits={habits} toggleHabit={toggleHabit} addHabit={addHabit} deleteHabit={deleteHabit} moveHabit={moveHabit} />
           </motion.section>
-          <motion.section variants={itemVariants} className="glass-panel">
-            <h2 style={{ marginBottom: '20px', fontSize: '1.5rem' }}>Commitment Map</h2>
+          
+          <motion.section id="insights-section" variants={itemVariants} className="glass-panel">
+            <h2 style={{ marginBottom: '24px', fontSize: '1.4rem', fontWeight: '800' }}>Commitment Map</h2>
             <CommitmentMap data={heatmapData} />
           </motion.section>
-          <motion.section variants={itemVariants} className="glass-panel">
+
+          <motion.section id="journal-section" variants={itemVariants} className="glass-panel">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: '800' }}>Neural Logs</h2>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '500' }}>{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+            </div>
             <DailyJournal todayStr={todayStr} />
           </motion.section>
         </div>
+
         <div className="side-column">
           <motion.section variants={itemVariants} className={`glass-panel ${isRecoveryMode ? 'recovery-mode-active' : ''}`}>
-            <h2 style={{ marginBottom: '20px', fontSize: '1.5rem' }}>Insights</h2>
-            <InsightDashboard habits={habits} completedCount={completedCount} totalCount={totalCount} streaks={streaks} chartData={chartData} isRecoveryMode={isRecoveryMode} setIsRecoveryMode={setIsRecoveryMode} isProtected={protectedDays[todayStr]} toggleBreakGlass={toggleBreakGlass} />
+            <h2 style={{ marginBottom: '24px', fontSize: '1.4rem', fontWeight: '800' }}>Architecture</h2>
+            <InsightDashboard 
+              habits={habits} 
+              completedCount={completedCount} 
+              totalCount={totalCount} 
+              streaks={streaks} 
+              chartData={chartData} 
+              isRecoveryMode={isRecoveryMode} 
+              setIsRecoveryMode={setIsRecoveryMode} 
+              isProtected={protectedDays[todayStr]} 
+              toggleBreakGlass={toggleBreakGlass}
+              productivityScore={productivityScore}
+              aiProphecy={aiProphecy}
+            />
           </motion.section>
-          <motion.section variants={itemVariants} className="glass-panel">
-            <h2 style={{ marginBottom: '20px', fontSize: '1.2rem', textAlign: 'center' }}>Focus Timer</h2>
-            <FocusTimer />
+
+          <motion.section id="focus-section" variants={itemVariants} className="glass-panel" style={{ background: 'linear-gradient(180deg, var(--glass-bg), rgba(var(--accent-primary-rgb), 0.05))' }}>
+            <h2 style={{ marginBottom: '24px', fontSize: '1.2rem', textAlign: 'center', letterSpacing: '2px', textTransform: 'uppercase', opacity: 0.8 }}>Focus Chamber</h2>
+            <FocusTimer 
+              timeLeft={timerTimeLeft} 
+              setTimeLeft={setTimerTimeLeft} 
+              isActive={timerIsActive} 
+              setIsActive={setTimerIsActive} 
+              mode={timerMode} 
+              setMode={setTimerMode}
+              soundEnabled={timerSoundEnabled}
+              setSoundEnabled={setTimerSoundEnabled}
+              history={timerHistory}
+              setHistory={setTimerHistory}
+            />
           </motion.section>
-          <motion.section variants={itemVariants} className="glass-panel" style={{ padding: '16px' }}>
+
+          <motion.section variants={itemVariants} className="glass-panel" style={{ padding: '20px' }}>
             <AmbientSounds />
           </motion.section>
-          <motion.section variants={itemVariants} className="glass-panel command-center-info">
-            <h3 style={{ fontSize: '0.9rem', color: 'var(--accent-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Zap size={14} /> Command Center
+
+          <motion.section variants={itemVariants} className="glass-panel command-center-info" style={{ background: 'rgba(0,0,0,0.02)' }}>
+            <h3 style={{ fontSize: '0.85rem', color: 'var(--accent-primary)', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+              <Zap size={14} /> OS Shortcuts
             </h3>
-            <div className="shortcut-list">
-              <div className="shortcut-item">
-                <span className="shortcut-label">Command Palette</span>
-                <kbd className="shortcut-key">Ctrl + K</kbd>
+            <div className="shortcut-list" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div className="shortcut-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span className="shortcut-label" style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Command Palette</span>
+                <kbd className="shortcut-key" style={{ background: 'var(--bg-primary)', padding: '4px 8px', borderRadius: '6px', fontSize: '0.75rem', border: '1px solid var(--glass-border)', fontWeight: '700' }}>Ctrl + K</kbd>
               </div>
-              <div className="shortcut-item">
-                <span className="shortcut-label">Toggle Zen Mode</span>
-                <kbd className="shortcut-key">Z</kbd>
+              <div className="shortcut-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span className="shortcut-label" style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Zen Mode</span>
+                <kbd className="shortcut-key" style={{ background: 'var(--bg-primary)', padding: '4px 8px', borderRadius: '6px', fontSize: '0.75rem', border: '1px solid var(--glass-border)', fontWeight: '700' }}>Z</kbd>
               </div>
-              <div className="shortcut-item">
-                <span className="shortcut-label">Neural Log</span>
-                <kbd className="shortcut-key">Shift + A</kbd>
+              <div className="shortcut-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span className="shortcut-label" style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Neural Sync</span>
+                <kbd className="shortcut-key" style={{ background: 'var(--bg-primary)', padding: '4px 8px', borderRadius: '6px', fontSize: '0.75rem', border: '1px solid var(--glass-border)', fontWeight: '700' }}>Shift + A</kbd>
               </div>
             </div>
           </motion.section>
         </div>
       </motion.div>
 
-      <footer className="footer">
-        <p>© 2026 HabitArc Ecosystem. Driven by Data, Designed for Humans.</p>
+      <footer className="footer" style={{ marginTop: '48px', padding: '32px 0', textAlign: 'center', borderTop: '1px solid var(--glass-border)' }}>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: '500' }}>
+          © 2026 HabitArc Ecosystem. <span style={{ color: 'var(--accent-primary)' }}>Precision Built</span> for Peak Performance.
+        </p>
       </footer>
 
-      <button className="fab fab-ai" onClick={handleAiClick}>✨</button>
-      <button className={`fab fab-scroll ${showScroll ? 'visible' : ''}`} onClick={scrollToTop}>↑</button>
+      <motion.button 
+        whileHover={{ scale: 1.1, rotate: 5 }}
+        whileTap={{ scale: 0.9, rotate: -5 }}
+        className="fab fab-ai" 
+        onClick={handleAiClick} 
+        title="Neural Sync"
+        style={{ 
+          background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
+          boxShadow: '0 8px 32px var(--accent-glow)',
+          width: '64px',
+          height: '64px',
+          fontSize: '1.5rem'
+        }}
+      >
+        ✨
+      </motion.button>
+      
+      <button className={`fab fab-scroll ${showScroll ? 'visible' : ''}`} onClick={scrollToTop} style={{ bottom: '100px' }}>↑</button>
 
-      {aiModalOpen && (
-        <div className="modal-overlay" onClick={() => setAiModalOpen(false)}>
-          <div className="modal-content ai-modal-premium" style={{ maxWidth: '500px' }} onClick={e => e.stopPropagation()}>
-            <div className="ai-orb-container">
-              <div className="ai-orb"></div>
-              <div className="ai-orb-ring"></div>
-              <div className="ai-orb-ring"></div>
-            </div>
-            <h2 className="modal-title" style={{ letterSpacing: '3px', color: 'var(--accent-primary)' }}>NEURAL SYNC</h2>
-            <div className="neural-sync-progress">
-              {currentTip.includes('...') && <motion.div className="neural-sync-bar" initial={{ width: 0 }} animate={{ width: '100%' }} transition={{ duration: 3 }} />}
-            </div>
-            <p className="typing-text" style={{ lineHeight: '1.7', fontSize: '1.15rem', marginBottom: '32px', minHeight: '100px', fontWeight: '300' }}>
-              {currentTip}
-            </p>
-            <div style={{ display: 'flex', gap: '16px' }}>
-              <button className="modal-close-btn premium" onClick={() => setAiModalOpen(false)} style={{ flex: 1 }}>Acknowledge</button>
-              {completedCount < totalCount && (
-                <button 
-                  className="modal-close-btn premium highlighted" 
-                  onClick={() => { setAiModalOpen(false); setIsZenMode(true); }}
-                  style={{ flex: 1.2 }}
-                >
-                  <Zap size={16} /> Initiate Zen
-                </button>
-              )}
-            </div>
+      <AnimatePresence>
+        {aiModalOpen && (
+          <div className="modal-overlay" onClick={() => setAiModalOpen(false)}>
+            <motion.div 
+              className="modal-content ai-modal-premium" 
+              style={{ maxWidth: '540px', padding: '48px', borderRadius: '32px' }} 
+              onClick={e => e.stopPropagation()}
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+            >
+              <div className="ai-orb-container" style={{ marginBottom: '40px' }}>
+                <div className="ai-orb" style={{ background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))' }}></div>
+                <div className="ai-orb-ring" style={{ borderColor: 'var(--accent-primary)' }}></div>
+                <div className="ai-orb-ring" style={{ borderColor: 'var(--accent-secondary)' }}></div>
+              </div>
+              
+              <h2 className="modal-title" style={{ letterSpacing: '6px', color: 'var(--text-primary)', fontSize: '1.2rem', fontWeight: '900', textAlign: 'center' }}>NEURAL SYNC</h2>
+              
+              <div className="neural-sync-progress" style={{ margin: '24px 0', height: '2px', background: 'rgba(0,0,0,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
+                {currentTip.includes('...') && (
+                  <motion.div 
+                    className="neural-sync-bar" 
+                    initial={{ width: 0 }} 
+                    animate={{ width: '100%' }} 
+                    transition={{ duration: 2.5 }} 
+                    style={{ height: '100%', background: 'linear-gradient(90deg, var(--accent-primary), var(--accent-secondary))' }}
+                  />
+                )}
+              </div>
+              
+              <p className="typing-text" style={{ lineHeight: '1.8', fontSize: '1.1rem', marginBottom: '40px', minHeight: '120px', fontWeight: '400', textAlign: 'center', color: 'var(--text-primary)' }}>
+                {currentTip}
+              </p>
+              
+              <div style={{ display: 'flex', gap: '16px' }}>
+                <button className="modal-close-btn premium" onClick={() => setAiModalOpen(false)} style={{ flex: 1, borderRadius: '16px' }}>Dismiss</button>
+                {completedCount < totalCount && (
+                  <button 
+                    className="modal-close-btn premium highlighted" 
+                    onClick={() => { setAiModalOpen(false); setIsZenMode(true); }}
+                    style={{ flex: 1.5, borderRadius: '16px', background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))' }}
+                  >
+                    <Zap size={18} /> Initiate Zen
+                  </button>
+                )}
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
       {achievementsOpen && <AchievementsModal onClose={() => setAchievementsOpen(false)} totalXP={totalXP} streaks={streaks} />}
@@ -557,28 +724,52 @@ function App() {
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.8 }}
+            style={{ backdropFilter: 'blur(40px)', background: 'rgba(var(--bg-primary-rgb), 0.95)' }}
           >
-            <div className="zen-bg-glow"></div>
-            <button className="zen-mode-btn exit" onClick={() => setIsZenMode(false)}>
-              <Minimize2 size={18} /> Exit Zen
-            </button>
+            <div className="zen-bg-glow" style={{ background: 'radial-gradient(circle at center, var(--accent-glow) 0%, transparent 70%)' }}></div>
+            
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="zen-mode-btn exit" 
+              onClick={() => setIsZenMode(false)}
+              style={{ position: 'absolute', top: '40px', right: '40px', background: 'var(--glass-bg)', color: 'var(--text-primary)', border: '1px solid var(--glass-border)', padding: '12px 24px', borderRadius: '100px', display: 'flex', alignItems: 'center', gap: '10px', fontWeight: '700' }}
+            >
+              <Minimize2 size={18} /> Exit Chamber
+            </motion.button>
+
             <div className="zen-content">
               <motion.div 
-                initial={{ y: 40, opacity: 0 }} 
+                initial={{ y: 60, opacity: 0 }} 
                 animate={{ y: 0, opacity: 1 }} 
-                transition={{ delay: 0.4, duration: 0.8 }}
-                style={{ width: '100%' }}
+                transition={{ delay: 0.3, duration: 1, type: 'spring' }}
+                style={{ width: '100%', maxWidth: '600px' }}
               >
-                <div className="breathing-container">
-                  <div className="breathing-circle"></div>
-                  <div className="breathing-circle-inner"></div>
-                  <p className="breathing-label">Breathe In... Breathe Out...</p>
+                <div className="breathing-container" style={{ marginBottom: '64px' }}>
+                  <div className="breathing-circle" style={{ border: '2px solid var(--accent-primary)', opacity: 0.3 }}></div>
+                  <div className="breathing-circle-inner" style={{ background: 'var(--accent-primary)', opacity: 0.1 }}></div>
+                  <p className="breathing-label" style={{ fontSize: '0.9rem', letterSpacing: '4px', textTransform: 'uppercase', color: 'var(--accent-primary)', fontWeight: '800' }}>Synchronizing Breath</p>
                 </div>
 
-                <h2 className="zen-title">DEEP FOCUS</h2>
-                <FocusTimer />
-                <div className="zen-sounds-container">
+                <h2 className="zen-title" style={{ fontSize: '3rem', fontWeight: '900', letterSpacing: '8px', marginBottom: '48px' }}>ZEN MODE</h2>
+                
+                <div className="glass-panel" style={{ padding: '48px', borderRadius: '40px', background: 'var(--glass-bg)' }}>
+                  <FocusTimer 
+                    timeLeft={timerTimeLeft} 
+                    setTimeLeft={setTimerTimeLeft} 
+                    isActive={timerIsActive} 
+                    setIsActive={setTimerIsActive} 
+                    mode={timerMode} 
+                    setMode={setTimerMode}
+                    soundEnabled={timerSoundEnabled}
+                    setSoundEnabled={setTimerSoundEnabled}
+                    history={timerHistory}
+                    setHistory={setTimerHistory}
+                  />
+                </div>
+
+                <div className="zen-sounds-container" style={{ marginTop: '48px' }}>
                   <AmbientSounds />
                 </div>
               </motion.div>
@@ -590,11 +781,18 @@ function App() {
       <div className="toast-container">
         <AnimatePresence>
           {toasts.map(toast => (
-            <motion.div key={toast.id} className="toast glass-panel" initial={{ opacity: 0, x: 100, scale: 0.8 }} animate={{ opacity: 1, x: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}>
-              <div className="toast-icon">{toast.icon}</div>
+            <motion.div 
+              key={toast.id} 
+              className="toast glass-panel" 
+              initial={{ opacity: 0, x: 100, scale: 0.8, filter: 'blur(10px)' }} 
+              animate={{ opacity: 1, x: 0, scale: 1, filter: 'blur(0px)' }} 
+              exit={{ opacity: 0, scale: 0.5, filter: 'blur(10px)', transition: { duration: 0.2 } }}
+              style={{ borderRadius: '20px', borderLeft: '4px solid var(--accent-primary)' }}
+            >
+              <div className="toast-icon" style={{ fontSize: '1.5rem' }}>{toast.icon}</div>
               <div className="toast-content">
-                <div className="toast-title">{toast.title}</div>
-                <div className="toast-msg">{toast.message}</div>
+                <div className="toast-title" style={{ fontWeight: '800', fontSize: '0.95rem' }}>{toast.title}</div>
+                <div className="toast-msg" style={{ fontSize: '0.85rem', opacity: 0.8 }}>{toast.message}</div>
               </div>
             </motion.div>
           ))}

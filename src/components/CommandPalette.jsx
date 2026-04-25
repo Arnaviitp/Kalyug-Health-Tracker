@@ -8,16 +8,18 @@ export default function CommandPalette({ isOpen, onClose, actions }) {
   const inputRef = useRef(null);
 
   const commandList = [
+    { id: 'scroll-habits', label: 'Go to Daily Actions', icon: <Plus size={18} />, action: () => actions.scrollToSection('habits-section'), category: 'Navigation' },
+    { id: 'scroll-insights', label: 'Go to Insights', icon: <Zap size={18} />, action: () => actions.scrollToSection('insights-section'), category: 'Navigation' },
+    { id: 'scroll-journal', label: 'Go to Daily Journal', icon: <Moon size={18} />, action: () => actions.scrollToSection('journal-section'), category: 'Navigation' },
+    { id: 'scroll-focus', label: 'Go to Focus Timer', icon: <Play size={18} />, action: () => actions.scrollToSection('focus-section'), category: 'Navigation' },
     { id: 'theme-dark', label: 'Switch to Dark Mode', icon: <Moon size={18} />, action: () => actions.setTheme('dark'), category: 'Appearance' },
     { id: 'theme-light', label: 'Switch to Light Mode', icon: <Sun size={18} />, action: () => actions.setTheme('light'), category: 'Appearance' },
     { id: 'theme-oled', label: 'Switch to OLED Mode', icon: <Monitor size={18} />, action: () => actions.setTheme('oled'), category: 'Appearance' },
     { id: 'open-achievements', label: 'View Achievements', icon: <Trophy size={18} />, action: () => actions.openAchievements(), category: 'General' },
     { id: 'open-settings', label: 'Open Settings', icon: <Settings size={18} />, action: () => actions.openSettings(), category: 'General' },
-    { id: 'start-timer', label: 'Start Focus Timer', icon: <Play size={18} />, action: () => actions.startTimer(), category: 'Productivity' },
-    { id: 'add-habit', label: 'Add New Habit', icon: <Plus size={18} />, action: () => actions.focusAddHabit(), category: 'Productivity' },
     { id: 'toggle-recovery', label: 'Toggle Recovery Mode', icon: <Shield size={18} />, action: () => actions.toggleRecovery(), category: 'System' },
     { id: 'toggle-zen', label: 'Toggle Zen Mode', icon: <Zap size={18} />, action: () => actions.toggleZen(), category: 'System' },
-    { id: 'ai-insight', label: 'Get AI Insight', icon: <Zap size={18} />, action: () => actions.getAiInsight(), category: 'System' },
+    { id: 'ai-insight', label: 'Get Neural Prophecy', icon: <Zap size={18} />, action: () => actions.getAiInsight(), category: 'System' },
   ];
 
   const filteredCommands = commandList.filter(cmd => 

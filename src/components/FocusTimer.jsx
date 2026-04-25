@@ -11,16 +11,18 @@ const FOCUS_QUOTES = [
   "Energy flows where attention goes."
 ];
 
-export default function FocusTimer() {
-  const [timeLeft, setTimeLeft] = useState(25 * 60);
-  const [isActive, setIsActive] = useState(false);
-  const [mode, setMode] = useState('pomodoro'); // pomodoro, shortBreak, longBreak
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [history, setHistory] = useState(() => {
-    const saved = localStorage.getItem('k-focus-history');
-    return saved ? JSON.parse(saved) : [];
-  });
-
+export default function FocusTimer({
+  timeLeft,
+  setTimeLeft,
+  isActive,
+  setIsActive,
+  mode,
+  setMode,
+  soundEnabled,
+  setSoundEnabled,
+  history,
+  setHistory
+}) {
   const totalTime = useMemo(() => {
     if (mode === 'pomodoro') return 25 * 60;
     if (mode === 'shortBreak') return 5 * 60;
@@ -37,7 +39,6 @@ export default function FocusTimer() {
     } else if (timeLeft === 0 && isActive) {
       setIsActive(false);
       
-      // Record session
       if (mode === 'pomodoro') {
         const newSession = {
           id: Date.now(),
@@ -45,47 +46,26 @@ export default function FocusTimer() {
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           duration: 25
         };
-        const updatedHistory = [newSession, ...history].slice(0, 5);
+        const updatedHistory = [newSession, ...history].slice(0, 3);
         setHistory(updatedHistory);
         localStorage.setItem('k-focus-history', JSON.stringify(updatedHistory));
       }
 
       if (soundEnabled) {
-        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-        audio.play().catch(() => {});
+        try {
+          const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+          audio.volume = 0.5;
+          audio.play().catch(() => {});
+        } catch(e) {}
       }
-      
-      let blinks = 0;
-      const blinkInterval = setInterval(() => {
-        document.title = blinks % 2 === 0 ? "🔔 TIME'S UP!" : "HabitArc";
-        blinks++;
-        if (blinks > 10) {
-          clearInterval(blinkInterval);
-          document.title = "HabitArc";
-        }
-      }, 500);
     }
 
-    if (isActive) {
-      const mins = Math.floor(timeLeft / 60);
-      const secs = timeLeft % 60;
-      document.title = `(${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}) Focus`;
-    } else {
-      document.title = "HabitArc";
-    }
+    return () => clearInterval(interval);
+  }, [isActive, timeLeft, soundEnabled, mode, history, setIsActive, setTimeLeft, setHistory]);
 
-    return () => {
-      clearInterval(interval);
-      document.title = "HabitArc";
-    };
-  }, [isActive, timeLeft, soundEnabled, mode, history]);
-
-  const toggleTimer = () => setIsActive(!isActive);
-  
-  const resetTimer = () => {
-    setIsActive(false);
-    setTimeLeft(totalTime);
-  };
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
+  const progress = ((totalTime - timeLeft) / totalTime) * 100;
 
   const changeMode = (newMode) => {
     setMode(newMode);
@@ -95,65 +75,150 @@ export default function FocusTimer() {
     else setTimeLeft(15 * 60);
   };
 
-  const minutes = Math.floor(timeLeft / 60);
-  const seconds = timeLeft % 60;
-  const progress = ((totalTime - timeLeft) / totalTime) * 100;
-
   return (
-    <div className="focus-timer">
-      <div className="timer-modes">
-        <button className={`mode-btn ${mode === 'pomodoro' ? 'active' : ''}`} onClick={() => changeMode('pomodoro')}>Pomodoro</button>
-        <button className={`mode-btn ${mode === 'shortBreak' ? 'active' : ''}`} onClick={() => changeMode('shortBreak')}>Break</button>
-        <button className={`mode-btn ${mode === 'longBreak' ? 'active' : ''}`} onClick={() => changeMode('longBreak')}>Long</button>
+    <div className="focus-timer" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div className="timer-modes" style={{ 
+        display: 'flex', 
+        gap: '8px', 
+        background: 'rgba(0,0,0,0.05)', 
+        padding: '6px', 
+        borderRadius: '100px', 
+        marginBottom: '40px' 
+      }}>
+        {['pomodoro', 'shortBreak', 'longBreak'].map(m => (
+          <button 
+            key={m}
+            className={`mode-btn ${mode === m ? 'active' : ''}`} 
+            onClick={() => changeMode(m)}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '100px',
+              border: 'none',
+              background: mode === m ? 'var(--bg-secondary)' : 'transparent',
+              color: mode === m ? 'var(--accent-primary)' : 'var(--text-secondary)',
+              fontSize: '0.8rem',
+              fontWeight: '700',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              boxShadow: mode === m ? '0 4px 12px rgba(0,0,0,0.05)' : 'none'
+            }}
+          >
+            {m === 'pomodoro' ? 'Pomodoro' : m === 'shortBreak' ? 'Short Break' : 'Long Break'}
+          </button>
+        ))}
       </div>
       
-      <div className="timer-visual-container">
-        <svg className="timer-svg" viewBox="0 0 100 100">
-          <circle className="timer-bg" cx="50" cy="50" r="45" />
+      <div className="timer-visual-container" style={{ position: 'relative', width: '220px', height: '220px', marginBottom: '40px' }}>
+        <svg viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
+          <circle 
+            cx="50" cy="50" r="46" 
+            fill="transparent" 
+            stroke="var(--glass-border)" 
+            strokeWidth="4" 
+          />
           <motion.circle 
-            className="timer-progress" 
-            cx="50" cy="50" r="45" 
+            cx="50" cy="50" r="46" 
+            fill="transparent" 
+            stroke="var(--accent-primary)" 
+            strokeWidth="4" 
+            strokeLinecap="round"
             initial={{ pathLength: 0 }}
             animate={{ pathLength: progress / 100 }}
             transition={{ type: "spring", stiffness: 50, damping: 20 }}
+            style={{ filter: 'drop-shadow(0 0 8px var(--accent-glow))' }}
           />
         </svg>
-        <div className={`timer-display ${isActive ? 'active' : ''}`}>
-          {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+        <div style={{ 
+          position: 'absolute', 
+          inset: 0, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center' 
+        }}>
+          <motion.div 
+            key={timeLeft}
+            initial={{ scale: 0.95, opacity: 0.8 }}
+            animate={{ scale: 1, opacity: 1 }}
+            style={{ 
+              fontSize: '3.5rem', 
+              fontWeight: '800', 
+              fontVariantNumeric: 'tabular-nums',
+              letterSpacing: '-2px',
+              color: 'var(--text-primary)'
+            }}
+          >
+            {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+          </motion.div>
+          <div style={{ fontSize: '0.7rem', fontWeight: '800', letterSpacing: '3px', textTransform: 'uppercase', opacity: 0.4, marginTop: '-8px' }}>
+            {isActive ? 'Flowing' : 'Paused'}
+          </div>
         </div>
       </div>
       
-      <div className="timer-controls">
-        <button className="control-btn play-pause" onClick={toggleTimer} aria-label={isActive ? "Pause" : "Start"}>
-          {isActive ? <Pause size={24} /> : <Play size={24} />}
-        </button>
-        <button className="control-btn restart" onClick={resetTimer} aria-label="Reset Timer">
-          <RotateCcw size={20} />
-        </button>
-        <button className="control-btn sound" onClick={() => setSoundEnabled(!soundEnabled)} aria-label={soundEnabled ? "Disable Sound" : "Enable Sound"}>
-          {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
-        </button>
+      <div className="timer-controls" style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '40px' }}>
+        <motion.button 
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => setIsActive(!isActive)}
+          style={{ 
+            width: '64px', 
+            height: '64px', 
+            borderRadius: '50%', 
+            background: 'var(--accent-primary)', 
+            color: 'white', 
+            border: 'none', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            cursor: 'pointer',
+            boxShadow: '0 8px 24px var(--accent-glow)'
+          }}
+        >
+          {isActive ? <Pause size={28} fill="white" /> : <Play size={28} fill="white" style={{ marginLeft: '4px' }} />}
+        </motion.button>
+        
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <motion.button 
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => { setIsActive(false); setTimeLeft(totalTime); }}
+            style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'var(--glass-bg)', color: 'var(--text-secondary)', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          >
+            <RotateCcw size={18} />
+          </motion.button>
+          
+          <motion.button 
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'var(--glass-bg)', color: soundEnabled ? 'var(--accent-primary)' : 'var(--text-secondary)', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          >
+            {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+          </motion.button>
+        </div>
       </div>
 
       {history.length > 0 && (
-        <div className="focus-history">
-          <div className="history-header">
+        <div style={{ width: '100%', borderTop: '1px solid var(--glass-border)', paddingTop: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>
             <History size={14} />
-            <span>Recent Sessions</span>
+            <span>Chamber History</span>
           </div>
-          <div className="history-list">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <AnimatePresence initial={false}>
               {history.map((session) => (
                 <motion.div 
                   key={session.id} 
-                  className="history-item"
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 10 }}
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'rgba(0,0,0,0.02)', borderRadius: '12px' }}
                 >
-                  <Zap size={12} style={{ color: 'var(--accent-primary)' }} />
-                  <span className="history-time">{session.timestamp}</span>
-                  <span className="history-type">{session.type}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Zap size={14} style={{ color: 'var(--accent-primary)' }} />
+                    <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>{session.type}</span>
+                  </div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '500' }}>{session.timestamp}</span>
                 </motion.div>
               ))}
             </AnimatePresence>
@@ -163,3 +228,4 @@ export default function FocusTimer() {
     </div>
   );
 }
+
