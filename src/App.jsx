@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Moon, Sun, Monitor, Plus, Settings, Trophy, Zap, Check, Minimize2, TrendingUp } from 'lucide-react';
+import { Moon, Sun, Monitor, Plus, Settings, Trophy, Zap, Check, Minimize2, TrendingUp, Smile, Meh, Frown, Archive } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import TactileLog from './components/TactileLog';
 import CommitmentMap from './components/CommitmentMap';
@@ -21,9 +21,9 @@ const formatDate = (date) => {
 };
 
 const initialHabits = [
-  { id: 1, text: 'Morning Meditation (10m)', completed: false, category: 'mental' },
-  { id: 2, text: 'Deep Work Session (90m)', completed: false, category: 'work' },
-  { id: 3, text: 'Drink 2L Water', completed: false, category: 'physical' }
+  { id: 1, text: 'Morning Meditation (10m)', completed: false, category: 'mental', subtasks: [] },
+  { id: 2, text: 'Deep Work Session (90m)', completed: false, category: 'work', subtasks: [] },
+  { id: 3, text: 'Drink 2L Water', completed: false, category: 'physical', subtasks: [] }
 ];
 
 const containerVariants = {
@@ -59,6 +59,14 @@ function App() {
   const [protectedDays, setProtectedDays] = useState(() => {
     const saved = localStorage.getItem('k-protected-days');
     return saved ? JSON.parse(saved) : {};
+  });
+  const [moods, setMoods] = useState(() => {
+    const saved = localStorage.getItem('k-moods');
+    return saved ? JSON.parse(saved) : {};
+  });
+  const [archivedHabits, setArchivedHabits] = useState(() => {
+    const saved = localStorage.getItem('k-archived-habits');
+    return saved ? JSON.parse(saved) : [];
   });
   const [isRecoveryMode, setIsRecoveryMode] = useState(false);
   const [isZenMode, setIsZenMode] = useState(false);
@@ -98,6 +106,214 @@ function App() {
     localStorage.setItem('k-daily-quest', JSON.stringify(quest));
     return quest;
   });
+
+  // --- Helper Functions ---
+  const addToast = (title, message, icon = "🏆") => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, title, message, icon }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+  };
+
+  const toggleBreakGlass = () => {
+    setProtectedDays(prev => ({ ...prev, [todayStr]: !prev[todayStr] }));
+  };
+
+  const toggleHabit = (id) => {
+    setHabits(habits.map(h => h.id === id ? { ...h, completed: !h.completed } : h));
+  };
+
+  const toggleSubtask = (habitId, subtaskId) => {
+    setHabits(habits.map(h => {
+      if (h.id === habitId) {
+        const subtasks = (h.subtasks || []).map(s => 
+          s.id === subtaskId ? { ...s, completed: !s.completed } : s
+        );
+        return { ...h, subtasks };
+      }
+      return h;
+    }));
+  };
+
+  const addSubtask = (habitId, text) => {
+    if (!text.trim()) return;
+    setHabits(habits.map(h => {
+      if (h.id === habitId) {
+        return { 
+          ...h, 
+          subtasks: [...(h.subtasks || []), { id: Date.now(), text, completed: false }] 
+        };
+      }
+      return h;
+    }));
+  };
+
+  const deleteSubtask = (habitId, subtaskId) => {
+    setHabits(habits.map(h => {
+      if (h.id === habitId) {
+        return { 
+          ...h, 
+          subtasks: (h.subtasks || []).filter(s => s.id !== subtaskId) 
+        };
+      }
+      return h;
+    }));
+  };
+
+  const addHabit = (text, category = 'work') => {
+    if (!text.trim()) return;
+    setHabits([...habits, { id: Date.now(), text, completed: false, category, subtasks: [] }]);
+  };
+
+  const deleteHabit = (id) => setHabits(habits.filter(h => h.id !== id));
+
+  const archiveHabit = (id) => {
+    const habitToArchive = habits.find(h => h.id === id);
+    if (habitToArchive) {
+      setArchivedHabits(prev => [...prev, habitToArchive]);
+      setHabits(prev => prev.filter(h => h.id !== id));
+      addToast("Habit Archived", habitToArchive.text, "📦");
+    }
+  };
+
+  const restoreHabit = (id) => {
+    const habitToRestore = archivedHabits.find(h => h.id === id);
+    if (habitToRestore) {
+      setHabits(prev => [...prev, habitToRestore]);
+      setArchivedHabits(prev => prev.filter(h => h.id !== id));
+      addToast("Habit Restored", habitToRestore.text, "♻️");
+    }
+  };
+
+  const clearArchive = () => {
+    if (window.confirm("Clear all archived habits?")) {
+      setArchivedHabits([]);
+      addToast("Archive Cleared", "All history removed.", "🗑️");
+    }
+  };
+
+  const moveHabit = (index, direction) => {
+    const newHabits = [...habits];
+    if (direction === 'up' && index > 0) {
+      [newHabits[index - 1], newHabits[index]] = [newHabits[index], newHabits[index - 1]];
+      setHabits(newHabits);
+    } else if (direction === 'down' && index < newHabits.length - 1) {
+      [newHabits[index + 1], newHabits[index]] = [newHabits[index], newHabits[index + 1]];
+      setHabits(newHabits);
+    }
+  };
+
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  const scrollToSection = (id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      const offset = 100;
+      const bodyRect = document.body.getBoundingClientRect().top;
+      const elementRect = el.getBoundingClientRect().top;
+      const elementPosition = elementRect - bodyRect;
+      const offsetPosition = elementPosition - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const handleAiClick = () => {
+    const aiTips = [
+      "Consistency > Intensity. A 10 minute run every day beats a 3 hour run once a month.",
+      "Your future is hidden in your daily routine.",
+      "A year from now you will wish you had started today.",
+      "Track your habits so you don't have to guess.",
+      "Motivation gets you going, but discipline keeps you growing.",
+      "Small wins lead to big changes. Celebrate your progress today.",
+      "Focus on what you can control. The rest will follow.",
+      "Energy flows where attention goes. Direct your focus to your top priority.",
+      "The secret of your success is found in your daily agenda.",
+      "Do something today that your future self will thank you for.",
+      "Don't count the days, make the days count.",
+      "You don't have to be great to start, but you have to start to be great.",
+      "Focus is the art of knowing what to ignore.",
+      "Your deep work capacity is like a muscle. Train it daily.",
+      "A 25-minute sprint is better than 2 hours of distraction."
+    ];
+    const categoryCounts = habits.reduce((acc, h) => {
+      acc[h.category] = (acc[h.category] || 0) + (h.completed ? 1 : 0);
+      return acc;
+    }, {});
+
+    const aiPools = {
+      zeroProgress: [
+        "I've analyzed your current state. The inertia is high, but the potential is higher. Start with the smallest action: " + (habits[0]?.text || "drinking a glass of water") + ".",
+        "Energy levels appear stagnant. A single small win can trigger a cascade of productivity. What's the easiest task on your list?",
+        "Sensors indicate a high activation energy required. Let's lower the bar. Focus on just one habit for 5 minutes."
+      ],
+      allCompleted: [
+        "Data synchronization complete. You've achieved a state of high coherence today. Maintain this alignment to compound your progress.",
+        "Total alignment detected. Your daily actions are perfectly synced with your long-term goals. Exceptional performance.",
+        "System check: 100% efficiency. You've cleared the board. Use this momentum to reflect or rest deeply."
+      ],
+      physicalDeficit: [
+        "My sensors detect a deficit in Physical vitality. Your body is the vessel for your mind. Prioritize your physical habits to sustain long-term performance.",
+        "Biological systems need maintenance. Movement or hydration should be your next priority to maintain cognitive output.",
+        "Warning: Physical energy reserves are low. Realigning focus to your health habits will prevent burnout."
+      ],
+      highStreak: [
+        `Neural patterns show a strong momentum of ${streaks.currentStreak} days. You are reaching a flow state. Do not let the chain break today.`,
+        `The ${streaks.currentStreak}-day chain is a powerful psychological asset. Protect it at all costs today.`,
+        `Momentum is your greatest ally. At ${streaks.currentStreak} days, habits are becoming hardwired. Keep pushing.`
+      ]
+    };
+
+    let smartTip = "";
+    if (completedCount === 0) smartTip = aiPools.zeroProgress[Math.floor(Math.random() * aiPools.zeroProgress.length)];
+    else if (completedCount === habits.length) smartTip = aiPools.allCompleted[Math.floor(Math.random() * aiPools.allCompleted.length)];
+    else if (!categoryCounts['physical'] && habits.some(h => h.category === 'physical')) smartTip = aiPools.physicalDeficit[Math.floor(Math.random() * aiPools.physicalDeficit.length)];
+    else if (streaks.currentStreak > 5) smartTip = aiPools.highStreak[Math.floor(Math.random() * aiPools.highStreak.length)];
+    else smartTip = aiTips[Math.floor(Math.random() * aiTips.length)];
+
+    setAiModalOpen(true);
+    
+    // Check if we should show full processing or skip for speed
+    const now = Date.now();
+    const lastAiTime = window._lastAiTime || 0;
+    window._lastAiTime = now;
+    const skipProcessing = now - (window._lastAiTimeLong || 0) < 60000; // Skip long animation if clicked in last 60s
+    window._lastAiTimeLong = now;
+
+    if (skipProcessing) {
+      setCurrentTip(smartTip);
+      return;
+    }
+
+    setCurrentTip("Accessing neural logs...");
+    const steps = [
+      "Accessing neural logs...",
+      "Analyzing daily patterns...",
+      `Current Sync: ${productivityScore}% Efficiency`,
+      "Synthesizing actionable insights...",
+      `Correlating ${streaks.currentStreak}-day streak data...`,
+      "Optimizing cognitive load...",
+      "Syncing with HabitArc OS...",
+      smartTip
+    ];
+
+    let i = 0;
+    const interval = setInterval(() => {
+      if (i < steps.length - 1) {
+        setCurrentTip(steps[i]);
+        i++;
+      } else {
+        setCurrentTip(steps[i]);
+        clearInterval(interval);
+      }
+    }, 600);
+  };
+
+  const totalFocusMinutes = useMemo(() => {
+    return timerHistory.reduce((acc, session) => acc + (session.duration || 0), 0);
+  }, [timerHistory]);
 
   // --- Derived Data ---
   const completedCount = habits.filter(h => h.completed).length;
@@ -146,20 +362,45 @@ function App() {
     return Math.round(habitScore + streakBonus + questBonus);
   }, [completedCount, totalCount, streaks.currentStreak, dailyQuest.completed]);
 
-  let totalXP = totalCompletedEver * 10;
-  if (dailyQuest.completed) totalXP += 50;
+  const attributesXP = useMemo(() => {
+    const xp = { physical: 0, mental: 0, work: 0, soul: 0, focus: 0 };
+    Object.keys(dailyLogs).forEach(date => {
+      habits.forEach(h => {
+        const cat = h.category || 'work';
+        if (!xp[cat]) xp[cat] = 0;
+        if (h.completed) {
+          xp[cat] += 10;
+        }
+        (h.subtasks || []).forEach(s => {
+          if (s.completed) xp[cat] += 5;
+        });
+      });
+    });
+    // Add bonus for quest
+    const questCat = dailyQuest.category || 'work';
+    if (!xp[questCat]) xp[questCat] = 0;
+    if (dailyQuest.completed) xp[questCat] += 50;
+    
+    xp.focus = Math.floor((totalFocusMinutes || 0) / 2);
+    return xp;
+  }, [habits, dailyLogs, dailyQuest, totalFocusMinutes]);
+
+  let totalXP = Object.values(attributesXP).reduce((a, b) => (a || 0) + (b || 0), 0);
+  totalXP += Math.floor((totalFocusMinutes || 0) / 5); // 1 XP for every 5 minutes of focus
+  totalXP = isNaN(totalXP) ? 0 : totalXP;
 
   const aiProphecy = useMemo(() => {
     if (totalCount === 0) return null;
     const progress = completedCount / totalCount;
+    const attributeNames = { physical: 'Vitality', mental: 'Intellect', work: 'Discipline', soul: 'Zen', focus: 'Deep Focus' };
     const lowCategories = ['physical', 'mental', 'work', 'soul'].filter(cat => 
       habits.some(h => h.category === cat) && !habits.find(h => h.category === cat && h.completed)
     );
 
     if (progress === 1) return "System Overload: Perfection detected. Your cognitive baseline has shifted upwards. Expect a surge in creative clarity tomorrow.";
-    if (progress > 0.7) return `The stars align with your discipline. A major breakthrough in your ${lowCategories[0] || 'Work'} sector is predicted within 48 hours.`;
-    if (lowCategories.includes('physical')) return "Your bio-rhythms show subtle fluctuations. Realigning with 'Physical' habits will stabilize your neural output.";
-    if (lowCategories.includes('mental')) return "Mental clarity is currently throttled. A brief meditation or reading session will unlock 15% more focus.";
+    if (progress > 0.7) return `The stars align with your discipline. A major breakthrough in your ${attributeNames[lowCategories[0]] || 'Discipline'} sector is predicted within 48 hours.`;
+    if (lowCategories.includes('physical')) return "Your bio-rhythms show subtle fluctuations. Realigning with 'Vitality' habits will stabilize your neural output.";
+    if (lowCategories.includes('mental')) return "Mental clarity is currently throttled. A brief focus session in 'Intellect' will unlock 15% more processing power.";
     return "Neural patterns are stabilizing. Consistency is your greatest multiplier. Stay the course.";
   }, [completedCount, totalCount, habits]);
 
@@ -255,6 +496,14 @@ function App() {
     localStorage.setItem('k-protected-days', JSON.stringify(protectedDays));
   }, [protectedDays]);
 
+  useEffect(() => {
+    localStorage.setItem('k-moods', JSON.stringify(moods));
+  }, [moods]);
+
+  useEffect(() => {
+    localStorage.setItem('k-archived-habits', JSON.stringify(archivedHabits));
+  }, [archivedHabits]);
+
   const [unlockedAchievements, setUnlockedAchievements] = useState(() => {
     const saved = localStorage.getItem('k-unlocked-achievements');
     return saved ? JSON.parse(saved) : [];
@@ -303,147 +552,6 @@ function App() {
     });
   }, [totalXP, streaks, unlockedAchievements]);
 
-  // --- Helper Functions ---
-  const addToast = (title, message, icon = "🏆") => {
-    const id = Date.now();
-    setToasts(prev => [...prev, { id, title, message, icon }]);
-    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
-  };
-
-  const toggleBreakGlass = () => {
-    setProtectedDays(prev => ({ ...prev, [todayStr]: !prev[todayStr] }));
-  };
-
-  const toggleHabit = (id) => {
-    setHabits(habits.map(h => h.id === id ? { ...h, completed: !h.completed } : h));
-  };
-
-  const addHabit = (text, category = 'work') => {
-    if (!text.trim()) return;
-    setHabits([...habits, { id: Date.now(), text, completed: false, category }]);
-  };
-
-  const deleteHabit = (id) => setHabits(habits.filter(h => h.id !== id));
-
-  const moveHabit = (index, direction) => {
-    const newHabits = [...habits];
-    if (direction === 'up' && index > 0) {
-      [newHabits[index - 1], newHabits[index]] = [newHabits[index], newHabits[index - 1]];
-      setHabits(newHabits);
-    } else if (direction === 'down' && index < newHabits.length - 1) {
-      [newHabits[index + 1], newHabits[index]] = [newHabits[index], newHabits[index + 1]];
-      setHabits(newHabits);
-    }
-  };
-
-  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
-
-  const scrollToSection = (id) => {
-    const el = document.getElementById(id);
-    if (el) {
-      const offset = 100;
-      const bodyRect = document.body.getBoundingClientRect().top;
-      const elementRect = el.getBoundingClientRect().top;
-      const elementPosition = elementRect - bodyRect;
-      const offsetPosition = elementPosition - offset;
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
-      });
-    }
-  };
-
-
-  const handleAiClick = () => {
-    const aiTips = [
-      "Consistency > Intensity. A 10 minute run every day beats a 3 hour run once a month.",
-      "Your future is hidden in your daily routine.",
-      "A year from now you will wish you had started today.",
-      "Track your habits so you don't have to guess.",
-      "Motivation gets you going, but discipline keeps you growing.",
-      "Small wins lead to big changes. Celebrate your progress today.",
-      "Focus on what you can control. The rest will follow.",
-      "Energy flows where attention goes. Direct your focus to your top priority.",
-      "The secret of your success is found in your daily agenda.",
-      "Do something today that your future self will thank you for.",
-      "Don't count the days, make the days count.",
-      "You don't have to be great to start, but you have to start to be great."
-    ];
-    const categoryCounts = habits.reduce((acc, h) => {
-      acc[h.category] = (acc[h.category] || 0) + (h.completed ? 1 : 0);
-      return acc;
-    }, {});
-
-    const aiPools = {
-      zeroProgress: [
-        "I've analyzed your current state. The inertia is high, but the potential is higher. Start with the smallest action: " + (habits[0]?.text || "drinking a glass of water") + ".",
-        "Energy levels appear stagnant. A single small win can trigger a cascade of productivity. What's the easiest task on your list?",
-        "Sensors indicate a high activation energy required. Let's lower the bar. Focus on just one habit for 5 minutes."
-      ],
-      allCompleted: [
-        "Data synchronization complete. You've achieved a state of high coherence today. Maintain this alignment to compound your progress.",
-        "Total alignment detected. Your daily actions are perfectly synced with your long-term goals. Exceptional performance.",
-        "System check: 100% efficiency. You've cleared the board. Use this momentum to reflect or rest deeply."
-      ],
-      physicalDeficit: [
-        "My sensors detect a deficit in Physical vitality. Your body is the vessel for your mind. Prioritize your physical habits to sustain long-term performance.",
-        "Biological systems need maintenance. Movement or hydration should be your next priority to maintain cognitive output.",
-        "Warning: Physical energy reserves are low. Realigning focus to your health habits will prevent burnout."
-      ],
-      highStreak: [
-        `Neural patterns show a strong momentum of ${streaks.currentStreak} days. You are reaching a flow state. Do not let the chain break today.`,
-        `The ${streaks.currentStreak}-day chain is a powerful psychological asset. Protect it at all costs today.`,
-        `Momentum is your greatest ally. At ${streaks.currentStreak} days, habits are becoming hardwired. Keep pushing.`
-      ]
-    };
-
-    let smartTip = "";
-    if (completedCount === 0) smartTip = aiPools.zeroProgress[Math.floor(Math.random() * aiPools.zeroProgress.length)];
-    else if (completedCount === habits.length) smartTip = aiPools.allCompleted[Math.floor(Math.random() * aiPools.allCompleted.length)];
-    else if (!categoryCounts['physical'] && habits.some(h => h.category === 'physical')) smartTip = aiPools.physicalDeficit[Math.floor(Math.random() * aiPools.physicalDeficit.length)];
-    else if (streaks.currentStreak > 5) smartTip = aiPools.highStreak[Math.floor(Math.random() * aiPools.highStreak.length)];
-    else smartTip = aiTips[Math.floor(Math.random() * aiTips.length)];
-
-    setAiModalOpen(true);
-    
-    // Check if we should show full processing or skip for speed
-    const lastAiTime = window._lastAiTime || 0;
-    const now = Date.now();
-    window._lastAiTime = now;
-    const skipProcessing = now - (window._lastAiTimeLong || 0) < 60000; // Skip long animation if clicked in last 60s
-    window._lastAiTimeLong = now;
-
-    if (skipProcessing) {
-      setCurrentTip(smartTip);
-      return;
-    }
-
-    setCurrentTip("Accessing neural logs...");
-    const steps = [
-      "Accessing neural logs...",
-      "Analyzing daily patterns...",
-      `Current Sync: ${productivityScore}% Efficiency`,
-      "Synthesizing actionable insights...",
-      `Correlating ${streaks.currentStreak}-day streak data...`,
-      "Optimizing cognitive load...",
-      "Syncing with HabitArc OS...",
-      smartTip
-    ];
-
-    let i = 0;
-    const interval = setInterval(() => {
-      if (i < steps.length - 1) {
-        setCurrentTip(steps[i]);
-        i++;
-      } else {
-        setCurrentTip(steps[i]);
-        clearInterval(interval);
-      }
-    }, 600);
-  };
-
-
   const cpActions = {
     setTheme: (t) => setTheme(t),
     openAchievements: () => setAchievementsOpen(true),
@@ -483,7 +591,7 @@ function App() {
             Sculpt your destiny, one habit at a time.
           </motion.p>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '20px' }}>
-            <LevelSystem totalXP={totalXP} />
+            <LevelSystem totalXP={totalXP} attributes={attributesXP} />
             <motion.div 
               className={`quest-badge ${dailyQuest.completed ? 'completed' : ''}`}
               whileHover={{ scale: 1.02, translateY: -2 }}
@@ -523,7 +631,41 @@ function App() {
             </motion.div>
           </div>
         </div>
-        <div className="theme-toggles glass-panel" style={{ padding: '8px', gap: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <div className="mood-selector glass-panel" style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '0.7rem', fontWeight: '800', opacity: 0.6, letterSpacing: '1px' }}>MOOD</span>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {[
+                { val: 'great', emoji: '🔥', icon: <Zap size={16} />, color: 'var(--accent-primary)' },
+                { val: 'good', emoji: '😊', icon: <Smile size={16} />, color: 'var(--success-color)' },
+                { val: 'neutral', emoji: '😐', icon: <Meh size={16} />, color: 'var(--text-secondary)' },
+                { val: 'low', emoji: '😔', icon: <Frown size={16} />, color: '#ef4444' }
+              ].map(m => (
+                <motion.button
+                  key={m.val}
+                  whileHover={{ scale: 1.2 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setMoods(prev => ({ ...prev, [todayStr]: m.val }))}
+                  style={{ 
+                    background: moods[todayStr] === m.val ? m.color : 'transparent',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '6px',
+                    cursor: 'pointer',
+                    color: moods[todayStr] === m.val ? 'white' : 'var(--text-secondary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.3s ease'
+                  }}
+                  title={m.val.toUpperCase()}
+                >
+                  {moods[todayStr] === m.val ? m.icon : m.emoji}
+                </motion.button>
+              ))}
+            </div>
+          </div>
+          <div className="theme-toggles glass-panel" style={{ padding: '8px', gap: '4px' }}>
           <button className="theme-btn" onClick={() => setAchievementsOpen(true)} title="Trophy Room"><Trophy size={18} /></button>
           <div style={{ width: '1px', height: '24px', background: 'var(--glass-border)', margin: '0 8px' }}></div>
           <button className={`theme-btn ${theme === 'light' ? 'active' : ''}`} onClick={() => setTheme('light')}><Sun size={18} /></button>
@@ -542,7 +684,8 @@ function App() {
             <Zap size={18} />
           </motion.button>
         </div>
-      </header>
+      </div>
+    </header>
 
       <motion.div 
         className="dashboard-grid" 
@@ -558,7 +701,17 @@ function App() {
                 {completedCount}/{totalCount} COMPLETED
               </div>
             </div>
-            <TactileLog habits={habits} toggleHabit={toggleHabit} addHabit={addHabit} deleteHabit={deleteHabit} moveHabit={moveHabit} />
+            <TactileLog 
+              habits={habits} 
+              toggleHabit={toggleHabit} 
+              addHabit={addHabit} 
+              deleteHabit={deleteHabit} 
+              archiveHabit={archiveHabit}
+              moveHabit={moveHabit} 
+              toggleSubtask={toggleSubtask}
+              addSubtask={addSubtask}
+              deleteSubtask={deleteSubtask}
+            />
           </motion.section>
           
           <motion.section id="insights-section" variants={itemVariants} className="glass-panel">
@@ -590,6 +743,9 @@ function App() {
               toggleBreakGlass={toggleBreakGlass}
               productivityScore={productivityScore}
               aiProphecy={aiProphecy}
+              moods={moods}
+              todayStr={todayStr}
+              timerHistory={timerHistory}
             />
           </motion.section>
 
@@ -712,7 +868,14 @@ function App() {
         )}
       </AnimatePresence>
 
-      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
+      {settingsOpen && (
+        <SettingsModal 
+          onClose={() => setSettingsOpen(false)} 
+          archivedHabits={archivedHabits}
+          restoreHabit={restoreHabit}
+          clearArchive={clearArchive}
+        />
+      )}
       {achievementsOpen && <AchievementsModal onClose={() => setAchievementsOpen(false)} totalXP={totalXP} streaks={streaks} />}
       <CommandPalette isOpen={cpOpen} onClose={() => setCpOpen(false)} actions={cpActions} />
       {completedCount === totalCount && totalCount > 0 && <Confetti />}

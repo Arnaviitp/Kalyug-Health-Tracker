@@ -12,9 +12,17 @@
 ## ✨ Key Features
 
 ### 🎮 Gamified Ecosystem
-- **Neural Level System**: Earn XP for every habit completed. Watch your level grow from *Novice* to *Eternal* with a custom-designed RPG-style progress bar.
-- **Dynamic Streaks**: Track your momentum with a robust streak system that calculates your "Vitality Score" and celebrates consistency.
+- **Neural Level System**: Earn XP for every habit and focus session completed. Watch your level grow from *Novice* to *Eternal* with custom-designed RPG-style attributes (Vitality, Intellect, Discipline, Zen, and Deep Focus).
+- **Dynamic Streaks**: Track your momentum with a robust streak system that calculates your "Coherence Score" and celebrates consistency.
 - **Achievements & Badges**: Unlock high-fidelity badges for milestones like "Midnight Warrior" or "Deep Work Master."
+
+### 🧠 Neural Resonance (Mood Tracking)
+- **Daily Calibration**: Log your emotional baseline directly from the header to synchronize your mental state with your productivity goals.
+- **Resonance Visualization**: Track your mood trends over time in the Insight Dashboard to correlate your emotional well-being with your habit consistency.
+
+### 📦 Neural Archive
+- **Habit Lifecycle Management**: Instead of deleting habits, move them to the **Neural Archive** to preserve your historical data while keeping your active dashboard focused.
+- **Restore Logic**: Easily bring archived habits back to your active list via the centralized Settings command center.
 
 ### 🧠 Neural Sync (AI Assistant)
 - **Neural Prophecy**: An advanced insight engine that analyzes your productivity patterns to predict future performance and provide motivational "prophecies."
@@ -26,12 +34,13 @@
 
 ### 🧘 Focus Chamber (Zen Mode)
 - **Immersive Timer**: A full-screen Focus Chamber with "Breathing" visualizers, deep glassmorphism, and ambient soundscapes.
+- **Deep Focus XP**: Earn 1 XP for every 5 minutes of focused work, contributing to your overall neural evolution.
 - **Ambient Audio**: Integrated sound engine featuring *Brown Noise*, *Cinematic Rain*, *Forest Echo*, and *Deep Space*.
 
 ---
 
 ## 🎨 Design Philosophy
-HabitArc 2.0 follows a **"Curved & Fluid"** aesthetic:
+HabitArc follows a **"Curved & Fluid"** aesthetic:
 - **Premium Typography**: Driven by **Outfit** and **Plus Jakarta Sans** for maximum readability and a professional tech feel.
 - **Deep Glassmorphism**: Cards feature `backdrop-filter: blur(20px)` with 1px border highlights and saturation-optimized background blends.
 - **Fluid Curvature**: Every interaction uses pill-shaped geometry (`borderRadius: 100px`) and "squircled" badges for a cohesive, modern look.
@@ -79,7 +88,7 @@ HabitArc 2.0 follows a **"Curved & Fluid"** aesthetic:
 | :--- | :--- |
 | `Ctrl + K` | Global Command Palette |
 | `Z` | Initiate Focus Chamber |
-| `T` | Cycle UI Themes |
+| `Shift + A` | Open Neural Sync (AI Assistant) |
 | `Esc` | Collapse Modals / Palettes |
 
 ---

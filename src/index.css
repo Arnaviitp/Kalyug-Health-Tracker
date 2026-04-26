@@ -2355,3 +2355,12 @@ kbd {
   color: rgba(255, 255, 255, 0.6) !important;
 }
 
+
+/* Mood Selector & Archive System */
+.mood-selector button { transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.mood-selector button:hover { transform: scale(1.2) translateY(-2px); }
+.archive-list::-webkit-scrollbar { width: 4px; }
+.archive-list::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 10px; }
+.archived-item { transition: all 0.2s ease; border: 1px solid transparent; }
+.archived-item:hover { border-color: var(--glass-border); background: rgba(0,0,0,0.05) !important; transform: translateX(4px); }
+

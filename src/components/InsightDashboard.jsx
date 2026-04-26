@@ -1,4 +1,4 @@
-import { Flame, Trophy, ShieldAlert, Heart, Activity, CheckCircle2, Zap, BrainCircuit, TrendingUp } from 'lucide-react';
+import { Flame, Trophy, ShieldAlert, Heart, Activity, CheckCircle2, Zap, BrainCircuit, TrendingUp, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const InsightDashboard = ({ 
@@ -12,10 +12,13 @@ const InsightDashboard = ({
   isProtected,
   toggleBreakGlass,
   productivityScore,
-  aiProphecy
+  aiProphecy,
+  moods,
+  todayStr,
+  timerHistory = []
 }) => {
   const progressPercent = totalCount === 0 ? 0 : completedCount / totalCount;
-  const offset = 377 - (377 * progressPercent);
+  const totalFocusMinutes = timerHistory.reduce((acc, s) => acc + (s.duration || 0), 0);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -31,10 +34,10 @@ const InsightDashboard = ({
   };
 
   const categories = [
-    { id: 'physical', label: 'Physical', color: '#10b981', icon: <Heart size={12} /> },
-    { id: 'mental', label: 'Mental', color: '#6366f1', icon: <BrainCircuit size={12} /> },
-    { id: 'work', label: 'Work', color: '#8b5cf6', icon: <TrendingUp size={12} /> },
-    { id: 'soul', label: 'Soul', color: '#f59e0b', icon: <Zap size={12} /> },
+    { id: 'physical', label: 'Vitality', color: '#10b981', icon: <Heart size={12} /> },
+    { id: 'mental', label: 'Intellect', color: '#6366f1', icon: <BrainCircuit size={12} /> },
+    { id: 'work', label: 'Discipline', color: '#8b5cf6', icon: <TrendingUp size={12} /> },
+    { id: 'soul', label: 'Zen', color: '#f59e0b', icon: <Zap size={12} /> },
   ];
 
   const categoryStats = categories.map(cat => {
@@ -131,9 +134,9 @@ const InsightDashboard = ({
         </motion.div>
 
         <motion.div variants={itemVariants} className="insight-stat-card glass-panel" style={{ padding: '16px', borderRadius: '28px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'var(--accent-glow)', borderColor: 'var(--accent-primary)' }}>
-          <div className="stat-icon-wrapper" style={{ color: 'var(--accent-primary)' }}><Zap size={20} /></div>
-          <span className="stat-value" style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--accent-primary)' }}>{productivityScore}</span>
-          <span className="stat-label" style={{ fontSize: '0.65rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--accent-primary)' }}>Vitality Score</span>
+          <div className="stat-icon-wrapper" style={{ color: 'var(--accent-primary)' }}><Clock size={20} /></div>
+          <span className="stat-value" style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--accent-primary)' }}>{totalFocusMinutes}m</span>
+          <span className="stat-label" style={{ fontSize: '0.65rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--accent-primary)' }}>Focus Time</span>
         </motion.div>
       </div>
 
@@ -201,6 +204,43 @@ const InsightDashboard = ({
               </div>
             </div>
           ))}
+        </div>
+      </motion.div>
+
+      {/* Mood Trend */}
+      <motion.div variants={itemVariants} className="mood-trend-section">
+        <h3 className="section-title" style={{ fontSize: '0.85rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '2px', color: 'var(--text-secondary)', marginBottom: '20px' }}>Neural Resonance (Mood)</h3>
+        <div className="mood-grid" style={{ display: 'flex', justifyContent: 'space-between', padding: '0 8px' }}>
+          {chartData.map((data, i) => {
+            const d = new Date(); d.setDate(d.getDate() - (6 - i));
+            const dateStr = d.toISOString().split('T')[0];
+            const mood = moods[dateStr];
+            const moodMap = {
+              great: { emoji: '🔥', color: 'var(--accent-primary)' },
+              good: { emoji: '😊', color: 'var(--success-color)' },
+              neutral: { emoji: '😐', color: 'var(--text-secondary)' },
+              low: { emoji: '😔', color: '#ef4444' }
+            };
+            return (
+              <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                <div style={{ 
+                  width: '32px', 
+                  height: '32px', 
+                  borderRadius: '50%', 
+                  background: mood ? 'rgba(var(--bg-primary-rgb), 0.5)' : 'rgba(0,0,0,0.05)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.2rem',
+                  border: mood ? `1px solid ${moodMap[mood].color}` : '1px solid transparent',
+                  boxShadow: mood ? `0 0 10px ${moodMap[mood].color}33` : 'none'
+                }}>
+                  {mood ? moodMap[mood].emoji : '·'}
+                </div>
+                <span style={{ fontSize: '0.6rem', fontWeight: '800', color: 'var(--text-secondary)' }}>{data.label}</span>
+              </div>
+            );
+          })}
         </div>
       </motion.div>
 

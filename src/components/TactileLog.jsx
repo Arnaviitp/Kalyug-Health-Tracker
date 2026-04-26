@@ -1,11 +1,23 @@
-import { Check, Trash2, Plus, ChevronUp, ChevronDown, Heart, Brain, Briefcase, Sparkles } from 'lucide-react';
+import { Check, Trash2, Plus, ChevronUp, ChevronDown, Heart, Brain, Briefcase, Sparkles, Archive } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const TactileLog = ({ habits, toggleHabit, addHabit, deleteHabit, moveHabit }) => {
+const TactileLog = ({ 
+  habits, 
+  toggleHabit, 
+  addHabit, 
+  deleteHabit, 
+  archiveHabit,
+  moveHabit,
+  toggleSubtask,
+  addSubtask,
+  deleteSubtask
+}) => {
   const [newHabit, setNewHabit] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('work');
+  const [expandedHabit, setExpandedHabit] = useState(null);
+  const [newSubtaskText, setNewSubtaskText] = useState('');
 
   const categories = [
     { id: 'physical', icon: <Heart size={14} />, color: '#10b981', label: 'Physical' },
@@ -26,6 +38,13 @@ const TactileLog = ({ habits, toggleHabit, addHabit, deleteHabit, moveHabit }) =
     if (!newHabit.trim()) return;
     addHabit(newHabit, selectedCategory);
     setNewHabit('');
+  };
+
+  const handleAddSubtask = (e, habitId) => {
+    e.preventDefault();
+    if (!newSubtaskText.trim()) return;
+    addSubtask(habitId, newSubtaskText);
+    setNewSubtaskText('');
   };
 
   const fireConfetti = () => {
@@ -82,65 +101,141 @@ const TactileLog = ({ habits, toggleHabit, addHabit, deleteHabit, moveHabit }) =
         {habits.map((habit, index) => (
           <motion.div 
             key={habit.id} 
-            className="habit-item-container"
+            className="habit-item-outer"
             layout
             initial={{ opacity: 0, y: 20, filter: 'blur(10px)' }}
             animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
             exit={{ opacity: 0, scale: 0.8, filter: 'blur(10px)' }}
             transition={{ type: 'spring', stiffness: 500, damping: 30, mass: 1 }}
           >
-            <button
-              className={`tactile-btn ${habit.completed ? 'success' : ''}`}
-              onClick={() => handleToggle(habit)}
-              aria-label={`Toggle habit ${habit.text}`}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <div className="habit-category-tag" style={{ 
-                  color: habit.completed ? 'white' : (categories.find(c => c.id === habit.category)?.color || 'var(--text-secondary)'),
-                  background: habit.completed ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)',
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '10px'
-                }}>
-                  {categories.find(c => c.id === habit.category)?.icon || <Sparkles size={16} />}
-                </div>
-                <span style={{ 
-                  textDecoration: habit.completed ? 'line-through' : 'none',
-                  opacity: habit.completed ? 0.7 : 1,
-                  fontSize: '1.05rem',
-                  fontWeight: 500
-                }}>{habit.text}</span>
-              </div>
-              <div className="checkbox-circle" style={{ width: '24px', height: '24px' }}>
-                {habit.completed && (
-                  <motion.div
-                    initial={{ scale: 0, rotate: -45 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    transition={{ type: 'spring', stiffness: 500, damping: 20 }}
-                  >
-                    <Check size={14} strokeWidth={4} />
-                  </motion.div>
-                )}
-              </div>
-            </button>
-            
-            <div className="habit-controls">
-              <div className="reorder-btns">
-                <button className="icon-btn" onClick={() => moveHabit(index, 'up')} disabled={index === 0}>
-                  <ChevronUp size={14} />
-                </button>
-                <button className="icon-btn" onClick={() => moveHabit(index, 'down')} disabled={index === habits.length - 1}>
-                  <ChevronDown size={14} />
-                </button>
-              </div>
-              <button 
-                className="icon-btn delete-btn" 
-                onClick={() => deleteHabit(habit.id)}
-                aria-label={`Delete ${habit.text}`}
+            <div className="habit-item-container">
+              <button
+                className={`tactile-btn ${habit.completed ? 'success' : ''}`}
+                onClick={() => handleToggle(habit)}
+                aria-label={`Toggle habit ${habit.text}`}
               >
-                <Trash2 size={16} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div className="habit-category-tag" style={{ 
+                    color: habit.completed ? 'white' : (categories.find(c => c.id === habit.category)?.color || 'var(--text-secondary)'),
+                    background: habit.completed ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)',
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '100px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    {categories.find(c => c.id === habit.category)?.icon || <Sparkles size={16} />}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                    <span style={{ 
+                      textDecoration: habit.completed ? 'line-through' : 'none',
+                      opacity: habit.completed ? 0.7 : 1,
+                      fontSize: '1.05rem',
+                      fontWeight: 600
+                    }}>{habit.text}</span>
+                    {habit.subtasks?.length > 0 && (
+                      <span style={{ fontSize: '0.75rem', opacity: 0.5, fontWeight: '700' }}>
+                        {habit.subtasks.filter(s => s.completed).length}/{habit.subtasks.length} SUBTASKS
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div className="checkbox-circle" style={{ width: '24px', height: '24px' }}>
+                    {habit.completed && (
+                      <motion.div
+                        initial={{ scale: 0, rotate: -45 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 20 }}
+                      >
+                        <Check size={14} strokeWidth={4} />
+                      </motion.div>
+                    )}
+                  </div>
+                </div>
               </button>
+              
+              <div className="habit-controls">
+                <div className="reorder-btns">
+                  <button className="icon-btn" onClick={() => setExpandedHabit(expandedHabit === habit.id ? null : habit.id)} title="Subtasks">
+                    <Plus size={14} style={{ transform: expandedHabit === habit.id ? 'rotate(45deg)' : 'none', transition: 'transform 0.3s' }} />
+                  </button>
+                  <button className="icon-btn" onClick={() => moveHabit(index, 'up')} disabled={index === 0}>
+                    <ChevronUp size={14} />
+                  </button>
+                  <button className="icon-btn" onClick={() => moveHabit(index, 'down')} disabled={index === habits.length - 1}>
+                    <ChevronDown size={14} />
+                  </button>
+                </div>
+                <button 
+                  className="icon-btn delete-btn" 
+                  onClick={() => deleteHabit(habit.id)}
+                  aria-label={`Delete ${habit.text}`}
+                >
+                  <Trash2 size={16} />
+                </button>
+                <button 
+                  className="icon-btn archive-btn" 
+                  onClick={() => archiveHabit(habit.id)}
+                  aria-label={`Archive ${habit.text}`}
+                  title="Archive Habit"
+                  style={{ color: 'var(--accent-primary)', opacity: 0.8 }}
+                >
+                  <Archive size={16} />
+                </button>
+              </div>
             </div>
+
+            {/* Subtasks Section */}
+            <AnimatePresence>
+              {expandedHabit === habit.id && (
+                <motion.div 
+                  className="subtask-section"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  style={{ overflow: 'hidden', padding: '0 20px' }}
+                >
+                  <div className="subtask-list" style={{ padding: '16px 0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {(habit.subtasks || []).map(sub => (
+                      <div key={sub.id} className="subtask-item" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 12px', background: 'rgba(0,0,0,0.02)', borderRadius: '12px' }}>
+                        <button 
+                          onClick={() => toggleSubtask(habit.id, sub.id)}
+                          style={{ 
+                            width: '20px', 
+                            height: '20px', 
+                            borderRadius: '6px', 
+                            border: '2px solid var(--glass-border)', 
+                            background: sub.completed ? 'var(--accent-primary)' : 'transparent',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {sub.completed && <Check size={12} strokeWidth={4} />}
+                        </button>
+                        <span style={{ fontSize: '0.9rem', opacity: sub.completed ? 0.5 : 1, textDecoration: sub.completed ? 'line-through' : 'none', flex: 1 }}>{sub.text}</span>
+                        <button className="icon-btn" onClick={() => deleteSubtask(habit.id, sub.id)} style={{ opacity: 0.3 }}><Trash2 size={12} /></button>
+                      </div>
+                    ))}
+                    <form onSubmit={(e) => handleAddSubtask(e, habit.id)} style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                      <input 
+                        type="text" 
+                        value={newSubtaskText}
+                        onChange={(e) => setNewSubtaskText(e.target.value)}
+                        placeholder="Add sub-task..." 
+                        className="subtask-input"
+                        style={{ background: 'transparent', border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '6px 12px', fontSize: '0.85rem', flex: 1 }}
+                      />
+                      <button type="submit" className="icon-btn" style={{ background: 'var(--glass-border)', borderRadius: '8px' }}><Plus size={16} /></button>
+                    </form>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         ))}
       </AnimatePresence>

@@ -1,6 +1,14 @@
-import { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, Sparkles, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { Mic, MicOff, Sparkles, AlertCircle, Smile, Meh, Frown, Heart, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+
+const MOODS = [
+  { id: 'great', emoji: '🤩', icon: <Heart size={16} />, color: '#10b981', label: 'Great' },
+  { id: 'good', emoji: '😊', icon: <Smile size={16} />, color: '#6366f1', label: 'Good' },
+  { id: 'neutral', emoji: '😐', icon: <Meh size={16} />, color: '#94a3b8', label: 'Neutral' },
+  { id: 'tired', emoji: '😴', icon: <Zap size={16} />, color: '#f59e0b', label: 'Tired' },
+  { id: 'bad', emoji: '😔', icon: <Frown size={16} />, color: '#ef4444', label: 'Bad' },
+];
 
 export default function DailyJournal({ todayStr }) {
   const [journalText, setJournalText] = useState(() => {
@@ -12,6 +20,15 @@ export default function DailyJournal({ todayStr }) {
     return '';
   });
 
+  const [mood, setMood] = useState(() => {
+    const saved = localStorage.getItem('k-moods');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return parsed[todayStr] || null;
+    }
+    return null;
+  });
+
   const [saveStatus, setSaveStatus] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [interimText, setInterimText] = useState('');
@@ -20,13 +37,10 @@ export default function DailyJournal({ todayStr }) {
   const recognitionRef = useRef(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem('k-journal');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      setJournalText(parsed[todayStr] || '');
-    } else {
-      setJournalText('');
-    }
+    const savedJ = JSON.parse(localStorage.getItem('k-journal') || '{}');
+    const savedM = JSON.parse(localStorage.getItem('k-moods') || '{}');
+    setJournalText(savedJ[todayStr] || '');
+    setMood(savedM[todayStr] || null);
     setError(null);
   }, [todayStr]);
 
@@ -38,16 +52,44 @@ export default function DailyJournal({ todayStr }) {
     
     const timer = setTimeout(() => {
       if (journalText !== undefined) {
-        const saved = JSON.parse(localStorage.getItem('k-journal') || '{}');
-        saved[todayStr] = journalText;
-        localStorage.setItem('k-journal', JSON.stringify(saved));
+        const savedJ = JSON.parse(localStorage.getItem('k-journal') || '{}');
+        savedJ[todayStr] = journalText;
+        localStorage.setItem('k-journal', JSON.stringify(savedJ));
+        
+        const savedM = JSON.parse(localStorage.getItem('k-moods') || '{}');
+        savedM[todayStr] = mood;
+        localStorage.setItem('k-moods', JSON.stringify(savedM));
+        
         setSaveStatus('Saved.');
         setTimeout(() => setSaveStatus(''), 2000);
       }
     }, 1000);
     
     return () => clearTimeout(timer);
-  }, [journalText, todayStr]);
+  }, [journalText, mood, todayStr]);
+
+  const sentiment = useMemo(() => {
+    if (!journalText) return { score: 0, color: 'var(--glass-border)' };
+    const positive = ['good', 'great', 'happy', 'grateful', 'win', 'success', 'amazing', 'love', 'done', 'perfect'];
+    const negative = ['bad', 'sad', 'tired', 'failed', 'hard', 'stuck', 'stress', 'angry', 'slow', 'missed'];
+    
+    const words = journalText.toLowerCase().split(/\s+/);
+    let score = 0;
+    words.forEach(w => {
+      if (positive.includes(w)) score += 1;
+      if (negative.includes(w)) score -= 1;
+    });
+    
+    const normalized = Math.max(-2, Math.min(2, score));
+    const colors = {
+      '-2': '#ef4444',
+      '-1': '#f59e0b',
+      '0': 'var(--accent-primary)',
+      '1': '#6366f1',
+      '2': '#10b981'
+    };
+    return { score: normalized, color: colors[normalized.toString()] };
+  }, [journalText]);
 
   const toggleRecording = () => {
     if (isRecording) {
@@ -120,9 +162,9 @@ export default function DailyJournal({ todayStr }) {
 
   return (
     <div className="daily-journal">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <h3 style={{ fontSize: '1.2rem', color: 'var(--text-primary)' }}>Daily Reflection</h3>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '800', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>Neural Reflection</h3>
           <Sparkles size={16} style={{ color: 'var(--accent-primary)' }} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -138,34 +180,51 @@ export default function DailyJournal({ todayStr }) {
               </motion.div>
             )}
           </AnimatePresence>
-          <span style={{ fontSize: '0.75rem', color: 'var(--success-color)', minWidth: '50px', textAlign: 'right', fontWeight: '500' }}>
+          <span style={{ fontSize: '0.7rem', color: 'var(--success-color)', minWidth: '50px', textAlign: 'right', fontWeight: '800', textTransform: 'uppercase' }}>
             {saveStatus}
           </span>
           <button 
             className={`voice-record-btn ${isRecording ? 'recording' : ''}`}
             onClick={toggleRecording}
             title={isRecording ? "Stop Recording" : "Start Voice Reflection"}
+            style={{ width: '40px', height: '40px', borderRadius: '12px' }}
           >
             {isRecording ? <MicOff size={18} /> : <Mic size={18} />}
-            <AnimatePresence>
-              {isRecording && (
-                <motion.span 
-                  className="recording-pulse"
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1.5, opacity: 0.5 }}
-                  exit={{ scale: 2, opacity: 0 }}
-                  transition={{ repeat: Infinity, duration: 1 }}
-                />
-              )}
-            </AnimatePresence>
           </button>
         </div>
       </div>
-      <div className="journal-wrapper">
+
+      <div className="mood-selector" style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+        {MOODS.map(m => (
+          <button
+            key={m.id}
+            onClick={() => setMood(m.id)}
+            style={{
+              flex: 1,
+              padding: '12px 0',
+              borderRadius: '16px',
+              border: mood === m.id ? `2px solid ${m.color}` : '1px solid var(--glass-border)',
+              background: mood === m.id ? `${m.color}15` : 'rgba(var(--bg-primary-rgb), 0.3)',
+              color: mood === m.id ? m.color : 'var(--text-secondary)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              cursor: 'pointer'
+            }}
+          >
+            <span style={{ fontSize: '1.4rem' }}>{m.emoji}</span>
+            <span style={{ fontSize: '0.6rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{m.label}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="journal-wrapper" style={{ position: 'relative' }}>
         <textarea 
           ref={textareaRef}
           className="journal-textarea"
-          placeholder="What did you learn today? What are you grateful for? (Try voice reflection!)"
+          placeholder="Sync your neural states... What insights were gained today?"
           value={journalText + (interimText ? (journalText ? ' ' : '') + interimText : '')}
           readOnly={isRecording}
           onChange={(e) => {
@@ -174,23 +233,44 @@ export default function DailyJournal({ todayStr }) {
               setSaveStatus('Saving...');
             }
           }}
+          style={{ minHeight: '120px', padding: '20px', borderRadius: '24px', background: 'rgba(var(--bg-primary-rgb), 0.2)', border: '1px solid var(--glass-border)', fontSize: '1.05rem', lineHeight: '1.6' }}
         />
         {isRecording && (
           <div className="recording-status">
             <div className="voice-waves">
               <span></span><span></span><span></span><span></span>
             </div>
-            Listening...
+            Neural Link Active...
           </div>
         )}
+        
+        <div 
+          className="sentiment-bar" 
+          style={{ 
+            height: '4px', 
+            background: 'rgba(0,0,0,0.05)', 
+            marginTop: '12px', 
+            borderRadius: '2px', 
+            overflow: 'hidden',
+            display: 'flex'
+          }}
+        >
+          <motion.div 
+            animate={{ width: `${(sentiment.score + 2) * 25}%`, background: sentiment.color }}
+            transition={{ type: 'spring', stiffness: 100 }}
+            style={{ height: '100%' }}
+          />
+        </div>
       </div>
+      
       {isRecording && (
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           className="interim-hint"
+          style={{ marginTop: '12px', textAlign: 'center', fontSize: '0.85rem', color: 'var(--accent-primary)', fontWeight: '500', fontStyle: 'italic' }}
         >
-          {interimText || "Speak now..."}
+          {interimText || "Transcribing neural input..."}
         </motion.div>
       )}
     </div>

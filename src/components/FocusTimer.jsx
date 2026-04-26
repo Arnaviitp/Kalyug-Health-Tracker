@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Play, Pause, RotateCcw, Volume2, VolumeX, History, Zap } from 'lucide-react';
+import { Play, Pause, RotateCcw, Volume2, VolumeX, History, Zap, Target, Edit3 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const FOCUS_QUOTES = [
@@ -23,6 +23,9 @@ export default function FocusTimer({
   history,
   setHistory
 }) {
+  const [sessionGoal, setSessionGoal] = useState('');
+  const [isEditingGoal, setIsEditingGoal] = useState(true);
+
   const totalTime = useMemo(() => {
     if (mode === 'pomodoro') return 25 * 60;
     if (mode === 'shortBreak') return 5 * 60;
@@ -44,7 +47,8 @@ export default function FocusTimer({
           id: Date.now(),
           type: 'Pomodoro',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          duration: 25
+          duration: 25,
+          goal: sessionGoal
         };
         const updatedHistory = [newSession, ...history].slice(0, 3);
         setHistory(updatedHistory);
@@ -61,7 +65,7 @@ export default function FocusTimer({
     }
 
     return () => clearInterval(interval);
-  }, [isActive, timeLeft, soundEnabled, mode, history, setIsActive, setTimeLeft, setHistory]);
+  }, [isActive, timeLeft, soundEnabled, mode, history, setIsActive, setTimeLeft, setHistory, sessionGoal]);
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
@@ -75,6 +79,11 @@ export default function FocusTimer({
     else setTimeLeft(15 * 60);
   };
 
+  const handleStart = () => {
+    setIsActive(true);
+    setIsEditingGoal(false);
+  };
+
   return (
     <div className="focus-timer" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <div className="timer-modes" style={{ 
@@ -83,7 +92,7 @@ export default function FocusTimer({
         background: 'rgba(0,0,0,0.05)', 
         padding: '6px', 
         borderRadius: '100px', 
-        marginBottom: '40px' 
+        marginBottom: '32px' 
       }}>
         {['pomodoro', 'shortBreak', 'longBreak'].map(m => (
           <button 
@@ -107,14 +116,62 @@ export default function FocusTimer({
           </button>
         ))}
       </div>
+
+      <AnimatePresence mode="wait">
+        {isEditingGoal && mode === 'pomodoro' ? (
+          <motion.div 
+            key="goal-input"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            style={{ width: '100%', marginBottom: '32px' }}
+          >
+            <div style={{ position: 'relative' }}>
+              <input 
+                type="text" 
+                value={sessionGoal}
+                onChange={(e) => setSessionGoal(e.target.value)}
+                placeholder="What are you achieving now?"
+                style={{ 
+                  width: '100%', 
+                  padding: '16px 20px', 
+                  paddingLeft: '48px',
+                  borderRadius: '16px', 
+                  border: '1px solid var(--glass-border)', 
+                  background: 'rgba(var(--bg-primary-rgb), 0.3)',
+                  fontSize: '0.95rem',
+                  fontWeight: '600',
+                  color: 'var(--text-primary)'
+                }}
+              />
+              <Target size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--accent-primary)' }} />
+            </div>
+          </motion.div>
+        ) : mode === 'pomodoro' ? (
+          <motion.div 
+            key="goal-display"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            onClick={() => !isActive && setIsEditingGoal(true)}
+            style={{ marginBottom: '32px', textAlign: 'center', cursor: isActive ? 'default' : 'pointer' }}
+          >
+            <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '8px' }}>Target Locked</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: '700', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+              {sessionGoal || "Pure Focus"}
+              {!isActive && <Edit3 size={14} opacity={0.5} />}
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
       
-      <div className="timer-visual-container" style={{ position: 'relative', width: '220px', height: '220px', marginBottom: '40px' }}>
+      <div className="timer-visual-container" style={{ position: 'relative', width: '200px', height: '200px', marginBottom: '40px' }}>
         <svg viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
           <circle 
             cx="50" cy="50" r="46" 
             fill="transparent" 
             stroke="var(--glass-border)" 
-            strokeWidth="4" 
+            strokeWidth="3" 
           />
           <motion.circle 
             cx="50" cy="50" r="46" 
@@ -141,8 +198,8 @@ export default function FocusTimer({
             initial={{ scale: 0.95, opacity: 0.8 }}
             animate={{ scale: 1, opacity: 1 }}
             style={{ 
-              fontSize: '3.5rem', 
-              fontWeight: '800', 
+              fontSize: '3rem', 
+              fontWeight: '900', 
               fontVariantNumeric: 'tabular-nums',
               letterSpacing: '-2px',
               color: 'var(--text-primary)'
@@ -150,8 +207,8 @@ export default function FocusTimer({
           >
             {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
           </motion.div>
-          <div style={{ fontSize: '0.7rem', fontWeight: '800', letterSpacing: '3px', textTransform: 'uppercase', opacity: 0.4, marginTop: '-8px' }}>
-            {isActive ? 'Flowing' : 'Paused'}
+          <div style={{ fontSize: '0.65rem', fontWeight: '800', letterSpacing: '3px', textTransform: 'uppercase', opacity: 0.4, marginTop: '-4px' }}>
+            {isActive ? 'Coherence' : 'Stasis'}
           </div>
         </div>
       </div>
@@ -160,7 +217,7 @@ export default function FocusTimer({
         <motion.button 
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
-          onClick={() => setIsActive(!isActive)}
+          onClick={() => isActive ? setIsActive(false) : handleStart()}
           style={{ 
             width: '64px', 
             height: '64px', 
@@ -182,7 +239,7 @@ export default function FocusTimer({
           <motion.button 
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            onClick={() => { setIsActive(false); setTimeLeft(totalTime); }}
+            onClick={() => { setIsActive(false); setTimeLeft(totalTime); setIsEditingGoal(true); }}
             style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'var(--glass-bg)', color: 'var(--text-secondary)', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
           >
             <RotateCcw size={18} />
@@ -212,13 +269,20 @@ export default function FocusTimer({
                   key={session.id} 
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'rgba(0,0,0,0.02)', borderRadius: '12px' }}
+                  style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '12px 16px', background: 'rgba(0,0,0,0.02)', borderRadius: '16px' }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <Zap size={14} style={{ color: 'var(--accent-primary)' }} />
-                    <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>{session.type}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <Zap size={14} style={{ color: 'var(--accent-primary)' }} />
+                      <span style={{ fontSize: '0.85rem', fontWeight: '700' }}>{session.type}</span>
+                    </div>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '500' }}>{session.timestamp}</span>
                   </div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '500' }}>{session.timestamp}</span>
+                  {session.goal && (
+                    <div style={{ fontSize: '0.75rem', opacity: 0.6, fontWeight: '500', paddingLeft: '24px' }}>
+                      ↳ {session.goal}
+                    </div>
+                  )}
                 </motion.div>
               ))}
             </AnimatePresence>
