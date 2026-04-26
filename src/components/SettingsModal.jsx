@@ -53,60 +53,92 @@ export default function SettingsModal({ onClose, archivedHabits = [], restoreHab
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose} style={{ backdropFilter: 'blur(10px)', zIndex: 1000 }}>
+    <div className="modal-overlay" onClick={onClose} style={{ 
+      backdropFilter: 'blur(15px)', 
+      zIndex: 10000, 
+      display: 'flex', 
+      alignItems: 'flex-start', 
+      justifyContent: 'center', 
+      overflowY: 'auto', 
+      padding: '40px 20px',
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100vw',
+      height: '100vh',
+      background: 'rgba(0,0,0,0.4)'
+    }}>
       <motion.div 
         className="modal-content glass-panel" 
         onClick={e => e.stopPropagation()}
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        style={{ maxWidth: '600px', width: '90%', padding: '40px', borderRadius: '32px' }}
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        style={{ 
+          maxWidth: '600px', 
+          width: '100%', 
+          padding: '40px', 
+          borderRadius: '32px',
+          position: 'relative',
+          marginTop: '20px',
+          marginBottom: '20px'
+        }}
       >
-        <button onClick={onClose} style={{ position: 'absolute', top: '24px', right: '24px', background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-          <X size={24} />
-        </button>
-        <h2 className="modal-title" style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '32px' }}>System Configuration</h2>
+        <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+          <h2 className="modal-title" style={{ fontSize: '1.8rem', fontWeight: '800', margin: 0 }}>System Configuration</h2>
+          <button onClick={onClose} style={{ background: 'rgba(0,0,0,0.05)', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '8px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <X size={20} />
+          </button>
+        </div>
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+        <div className="settings-grid" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
           <div className="settings-section">
-            <h3 style={{ fontSize: '0.85rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--accent-primary)', marginBottom: '20px' }}>Data Core</h3>
-            <div className="settings-actions" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <button className="tactile-btn" onClick={exportData} style={{ padding: '12px', borderRadius: '14px', fontSize: '0.9rem' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Download size={18} /> Export Backup</span>
+            <h3 style={{ fontSize: '0.85rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--accent-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Download size={14} /> Data Core
+            </h3>
+            <div className="settings-actions" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <button className="tactile-btn" onClick={exportData} style={{ padding: '12px 20px', borderRadius: '16px', fontSize: '0.85rem', background: 'var(--accent-glow)', border: '1px solid var(--accent-primary)', color: 'var(--accent-primary)', fontWeight: '700', transition: 'all 0.2s ease' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}><Download size={16} /> Export Backup</span>
               </button>
               
-              <label className="tactile-btn" style={{ justifyContent: 'center', padding: '12px', borderRadius: '14px', fontSize: '0.9rem' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Upload size={18} /> Import Backup</span>
+              <label className="tactile-btn" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px 20px', borderRadius: '16px', fontSize: '0.85rem', cursor: 'pointer', background: 'var(--accent-glow)', border: '1px solid var(--accent-primary)', color: 'var(--accent-primary)', fontWeight: '700', transition: 'all 0.2s ease' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Upload size={16} /> Import Backup</span>
                 <input type="file" accept=".json" style={{ display: 'none' }} onChange={importData} />
               </label>
-
-              <button className="tactile-btn" style={{ borderColor: '#ef4444', color: '#ef4444', padding: '12px', borderRadius: '14px', fontSize: '0.9rem' }} onClick={hardReset}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Trash2 size={18} /> Wipe System Data</span>
-              </button>
             </div>
+            <button 
+              className="tactile-btn" 
+              style={{ marginTop: '12px', width: '100%', borderColor: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', padding: '12px', borderRadius: '16px', fontSize: '0.85rem', background: 'rgba(239, 68, 68, 0.05)' }} 
+              onClick={hardReset}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}><Trash2 size={16} /> Wipe All Neural Data</span>
+            </button>
           </div>
 
           <div className="archive-section">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ fontSize: '0.85rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-secondary)' }}>Neural Archive</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '0.85rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Archive size={14} /> Neural Archive
+              </h3>
               {archivedHabits.length > 0 && (
-                <button onClick={clearArchive} style={{ fontSize: '0.7rem', color: '#ef4444', background: 'none', border: 'none', fontWeight: '700', cursor: 'pointer' }}>CLEAR ALL</button>
+                <button onClick={clearArchive} style={{ fontSize: '0.7rem', color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)', border: 'none', fontWeight: '800', cursor: 'pointer', padding: '4px 10px', borderRadius: '100px' }}>PURGE ARCHIVE</button>
               )}
             </div>
             
-            <div className="archive-list" style={{ maxHeight: '240px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', paddingRight: '8px' }}>
+            <div className="archive-list" style={{ maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px', background: 'rgba(0,0,0,0.02)', borderRadius: '20px', border: '1px solid var(--glass-border)' }}>
               {archivedHabits.length === 0 ? (
-                <div style={{ padding: '20px', textAlign: 'center', opacity: 0.5, border: '1px dashed var(--glass-border)', borderRadius: '16px' }}>
-                  <Archive size={24} style={{ marginBottom: '8px', opacity: 0.3 }} />
-                  <p style={{ fontSize: '0.8rem' }}>No archived habits.</p>
+                <div style={{ padding: '32px 20px', textAlign: 'center', opacity: 0.5 }}>
+                  <Archive size={20} style={{ marginBottom: '8px', opacity: 0.3 }} />
+                  <p style={{ fontSize: '0.8rem' }}>No archived memory fragments.</p>
                 </div>
               ) : (
                 archivedHabits.map(habit => (
-                  <div key={habit.id} className="archived-item" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: 'rgba(0,0,0,0.03)', borderRadius: '12px' }}>
-                    <span style={{ flex: 1, fontSize: '0.9rem', fontWeight: '500', opacity: 0.8 }}>{habit.text}</span>
+                  <div key={habit.id} className="archived-item" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: '14px' }}>
+                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-primary)', opacity: 0.5 }}></div>
+                    <span style={{ flex: 1, fontSize: '0.85rem', fontWeight: '600', opacity: 0.9 }}>{habit.text}</span>
                     <button 
                       onClick={() => restoreHabit(habit.id)}
-                      style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                      title="Restore"
+                      style={{ background: 'var(--accent-glow)', border: 'none', color: 'var(--accent-primary)', cursor: 'pointer', padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center' }}
+                      title="Restore Habit"
                     >
                       <RefreshCw size={14} />
                     </button>
@@ -117,8 +149,13 @@ export default function SettingsModal({ onClose, archivedHabits = [], restoreHab
           </div>
         </div>
 
-        <div className="footer-note" style={{ marginTop: '40px', paddingTop: '20px', borderTop: '1px solid var(--glass-border)', textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)', opacity: 0.6 }}>
-          HabitArc OS v2.4.1 | Neural-Link Stable
+        <div className="modal-footer" style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <button className="tactile-btn premium" onClick={onClose} style={{ width: '100%', padding: '14px', borderRadius: '18px', background: 'var(--text-primary)', color: 'var(--bg-primary)', fontWeight: '800', border: 'none' }}>
+            Acknowledge Changes
+          </button>
+          <div style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-secondary)', opacity: 0.5, letterSpacing: '1px' }}>
+            HABITARC OS v2.5.0 // NEURAL-LINK ENCRYPTED
+          </div>
         </div>
       </motion.div>
     </div>
