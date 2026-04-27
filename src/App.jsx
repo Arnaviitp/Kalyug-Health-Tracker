@@ -389,20 +389,47 @@ function App() {
   totalXP += Math.floor((totalFocusMinutes || 0) / 5); // 1 XP for every 5 minutes of focus
   totalXP = isNaN(totalXP) ? 0 : totalXP;
 
+  const momentumScore = useMemo(() => {
+    const base = productivityScore;
+    const moodFactor = moods[todayStr] === 'great' ? 1.2 : moods[todayStr] === 'low' ? 0.8 : 1;
+    const focusFactor = Math.min(1.5, 1 + (totalFocusMinutes / 120));
+    return Math.round(base * moodFactor * focusFactor);
+  }, [productivityScore, moods, todayStr, totalFocusMinutes]);
+
   const aiProphecy = useMemo(() => {
     if (totalCount === 0) return null;
     const progress = completedCount / totalCount;
     const attributeNames = { physical: 'Vitality', mental: 'Intellect', work: 'Discipline', soul: 'Zen', focus: 'Deep Focus' };
+    
+    const moodHistory = Object.values(moods).slice(-7);
+    const lowMoods = moodHistory.filter(m => m === 'low').length;
+    const highMoods = moodHistory.filter(m => m === 'great').length;
+
     const lowCategories = ['physical', 'mental', 'work', 'soul'].filter(cat => 
       habits.some(h => h.category === cat) && !habits.find(h => h.category === cat && h.completed)
     );
 
-    if (progress === 1) return "System Overload: Perfection detected. Your cognitive baseline has shifted upwards. Expect a surge in creative clarity tomorrow.";
+    if (progress === 1) {
+      if (highMoods > 3) return "Flow State Detected: Your neural efficiency is at its peak. This 'God Mode' trajectory suggests a significant cognitive evolution in the next 72 hours.";
+      return "System Overload: Perfection detected. Your cognitive baseline has shifted upwards. Expect a surge in creative clarity tomorrow.";
+    }
+
+    if (lowMoods > 2) {
+      return "Critical Warning: System fatigue detected. Prioritize 'Zen' and 'Vitality' protocols to prevent a total neural collapse. Momentum is at risk.";
+    }
+
+    if (totalFocusMinutes > 120) {
+      return "Hyper-Focus Loop: Your deep work capacity has exceeded the daily average. Be wary of 'Intellect' burnout. Realign with 'Soul' habits.";
+    }
+
     if (progress > 0.7) return `The stars align with your discipline. A major breakthrough in your ${attributeNames[lowCategories[0]] || 'Discipline'} sector is predicted within 48 hours.`;
+    
     if (lowCategories.includes('physical')) return "Your bio-rhythms show subtle fluctuations. Realigning with 'Vitality' habits will stabilize your neural output.";
+    
     if (lowCategories.includes('mental')) return "Mental clarity is currently throttled. A brief focus session in 'Intellect' will unlock 15% more processing power.";
+    
     return "Neural patterns are stabilizing. Consistency is your greatest multiplier. Stay the course.";
-  }, [completedCount, totalCount, habits]);
+  }, [completedCount, totalCount, habits, moods, totalFocusMinutes]);
 
   // Level tracking state (needs totalXP for initial value)
   const [lastLevel, setLastLevel] = useState(() => Math.floor(Math.sqrt(totalXP / 50)) + 1);
@@ -604,7 +631,7 @@ function App() {
                 alignItems: 'center', 
                 gap: '12px', 
                 padding: '10px 20px', 
-                borderRadius: '100px',
+                borderRadius: '24px',
                 background: dailyQuest.completed ? 'var(--success-color)' : 'rgba(var(--bg-primary-rgb), 0.5)',
                 color: dailyQuest.completed ? 'white' : 'var(--text-primary)',
                 border: dailyQuest.completed ? 'none' : '1px solid var(--glass-border)',
@@ -649,7 +676,7 @@ function App() {
                   style={{ 
                     background: moods[todayStr] === m.val ? m.color : 'transparent',
                     border: 'none',
-                    borderRadius: '8px',
+                    borderRadius: '12px',
                     padding: '6px',
                     cursor: 'pointer',
                     color: moods[todayStr] === m.val ? 'white' : 'var(--text-secondary)',
@@ -697,7 +724,7 @@ function App() {
           <motion.section id="habits-section" variants={itemVariants} className="glass-panel">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '1.4rem', fontWeight: '800' }}>Daily Actions</h2>
-              <div style={{ padding: '4px 12px', background: 'var(--accent-glow)', color: 'var(--accent-primary)', borderRadius: '100px', fontSize: '0.8rem', fontWeight: '700' }}>
+              <div style={{ padding: '4px 12px', background: 'var(--accent-glow)', color: 'var(--accent-primary)', borderRadius: '12px', fontSize: '0.8rem', fontWeight: '700' }}>
                 {completedCount}/{totalCount} COMPLETED
               </div>
             </div>
@@ -909,10 +936,55 @@ function App() {
                 transition={{ delay: 0.3, duration: 1, type: 'spring' }}
                 style={{ width: '100%', maxWidth: '600px' }}
               >
-                <div className="breathing-container" style={{ marginBottom: '64px' }}>
-                  <div className="breathing-circle" style={{ border: '2px solid var(--accent-primary)', opacity: 0.3 }}></div>
-                  <div className="breathing-circle-inner" style={{ background: 'var(--accent-primary)', opacity: 0.1 }}></div>
-                  <p className="breathing-label" style={{ fontSize: '0.9rem', letterSpacing: '4px', textTransform: 'uppercase', color: 'var(--accent-primary)', fontWeight: '800' }}>Synchronizing Breath</p>
+                <div className="breathing-container" style={{ marginBottom: '64px', position: 'relative', height: '240px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <motion.div 
+                    animate={{ 
+                      scale: [1, 1.8, 1],
+                      opacity: [0.1, 0.3, 0.1]
+                    }}
+                    transition={{ 
+                      duration: 8, 
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                    className="breathing-circle" 
+                    style={{ position: 'absolute', border: '2px solid var(--accent-primary)', width: '200px', height: '200px', borderRadius: '50%' }}
+                  />
+                  <motion.div 
+                    animate={{ 
+                      scale: [1, 1.5, 1],
+                    }}
+                    transition={{ 
+                      duration: 8, 
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                    className="breathing-circle-inner" 
+                    style={{ position: 'absolute', background: 'var(--accent-primary)', opacity: 0.1, width: '150px', height: '150px', borderRadius: '50%' }}
+                  />
+                  <div style={{ textAlign: 'center', zIndex: 1 }}>
+                    <motion.p 
+                      animate={{ 
+                        opacity: [0.4, 1, 0.4],
+                      }}
+                      transition={{ duration: 8, repeat: Infinity }}
+                      className="breathing-label" 
+                      style={{ fontSize: '0.9rem', letterSpacing: '8px', textTransform: 'uppercase', color: 'var(--accent-primary)', fontWeight: '900' }}
+                    >
+                      {timerIsActive ? 'Focus Your Spirit' : 'Sync Your Breath'}
+                    </motion.p>
+                    <div style={{ display: 'flex', gap: '20px', marginTop: '24px', justifyContent: 'center' }}>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '800', marginBottom: '4px' }}>MOMENTUM</div>
+                        <div style={{ fontSize: '1.2rem', fontWeight: '900', color: 'var(--accent-primary)' }}>{momentumScore}</div>
+                      </div>
+                      <div style={{ width: '1px', background: 'var(--glass-border)' }}></div>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '800', marginBottom: '4px' }}>COHERENCE</div>
+                        <div style={{ fontSize: '1.2rem', fontWeight: '900', color: 'var(--text-primary)' }}>{Math.round(productivityScore)}%</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <h2 className="zen-title" style={{ fontSize: '3rem', fontWeight: '900', letterSpacing: '8px', marginBottom: '48px' }}>ZEN MODE</h2>

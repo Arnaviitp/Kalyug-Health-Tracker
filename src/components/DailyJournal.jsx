@@ -233,7 +233,7 @@ export default function DailyJournal({ todayStr }) {
               setSaveStatus('Saving...');
             }
           }}
-          style={{ minHeight: '120px', padding: '20px', borderRadius: '24px', background: 'rgba(var(--bg-primary-rgb), 0.2)', border: '1px solid var(--glass-border)', fontSize: '1.05rem', lineHeight: '1.6' }}
+          style={{ minHeight: '120px', padding: '20px', borderRadius: '32px', background: 'rgba(var(--bg-primary-rgb), 0.2)', border: '1px solid var(--glass-border)', fontSize: '1.05rem', lineHeight: '1.6' }}
         />
         {isRecording && (
           <div className="recording-status">
@@ -245,21 +245,29 @@ export default function DailyJournal({ todayStr }) {
         )}
         
         <div 
-          className="sentiment-bar" 
-          style={{ 
-            height: '4px', 
-            background: 'rgba(0,0,0,0.05)', 
-            marginTop: '12px', 
-            borderRadius: '2px', 
-            overflow: 'hidden',
-            display: 'flex'
-          }}
+          className="sentiment-section" 
+          style={{ marginTop: '24px', padding: '16px', background: 'rgba(var(--bg-primary-rgb), 0.1)', borderRadius: '24px', border: '1px solid var(--glass-border)' }}
         >
-          <motion.div 
-            animate={{ width: `${(sentiment.score + 2) * 25}%`, background: sentiment.color }}
-            transition={{ type: 'spring', stiffness: 100 }}
-            style={{ height: '100%' }}
-          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>Neural Resonance</span>
+            <span style={{ fontSize: '0.75rem', fontWeight: '900', color: sentiment.color }}>{sentiment.score > 0 ? '+' : ''}{sentiment.score.toFixed(1)}</span>
+          </div>
+          <div 
+            className="sentiment-bar" 
+            style={{ 
+              height: '6px', 
+              background: 'rgba(0,0,0,0.05)', 
+              borderRadius: '10px', 
+              overflow: 'hidden',
+              display: 'flex'
+            }}
+          >
+            <motion.div 
+              animate={{ width: `${(sentiment.score + 2) * 25}%`, background: sentiment.color }}
+              transition={{ type: 'spring', stiffness: 100 }}
+              style={{ height: '100%', borderRadius: '10px', boxShadow: `0 0 10px ${sentiment.color}44` }}
+            />
+          </div>
         </div>
       </div>
       
@@ -268,7 +276,7 @@ export default function DailyJournal({ todayStr }) {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           className="interim-hint"
-          style={{ marginTop: '12px', textAlign: 'center', fontSize: '0.85rem', color: 'var(--accent-primary)', fontWeight: '500', fontStyle: 'italic' }}
+          style={{ marginTop: '16px', textAlign: 'center', fontSize: '0.85rem', color: 'var(--accent-primary)', fontWeight: '600', fontStyle: 'italic', letterSpacing: '0.5px' }}
         >
           {interimText || "Transcribing neural input..."}
         </motion.div>

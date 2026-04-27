@@ -38,14 +38,38 @@ const InsightDashboard = ({
     { id: 'mental', label: 'Intellect', color: '#6366f1', icon: <BrainCircuit size={12} /> },
     { id: 'work', label: 'Discipline', color: '#8b5cf6', icon: <TrendingUp size={12} /> },
     { id: 'soul', label: 'Zen', color: '#f59e0b', icon: <Zap size={12} /> },
+    { id: 'focus', label: 'Focus', color: '#06b6d4', icon: <Clock size={12} /> },
   ];
 
   const categoryStats = categories.map(cat => {
+    if (cat.id === 'focus') {
+      const focusScore = Math.min(100, (totalFocusMinutes / 60) * 100); // 60 mins = 100%
+      return { ...cat, score: focusScore };
+    }
     const catHabits = habits.filter(h => h.category === cat.id);
     const total = catHabits.length;
     const completed = catHabits.filter(h => h.completed).length;
     return { ...cat, score: total === 0 ? 0 : (completed / total) * 100 };
   });
+
+  // Radar Chart Logic
+  const numPoints = categories.length;
+  const radius = 60;
+  const center = 80;
+  
+  const getPoint = (index, value) => {
+    const angle = (Math.PI * 2 * index) / numPoints - Math.PI / 2;
+    const r = (value / 100) * radius;
+    return {
+      x: center + r * Math.cos(angle),
+      y: center + r * Math.sin(angle)
+    };
+  };
+
+  const radarPoints = categoryStats.map((cat, i) => getPoint(i, Math.max(10, cat.score))).map(p => `${p.x},${p.y}`).join(' ');
+  const gridPoints = [20, 40, 60, 80, 100].map(val => 
+    categoryStats.map((_, i) => getPoint(i, val)).map(p => `${p.x},${p.y}`).join(' ')
+  );
 
   return (
     <motion.div 
@@ -121,19 +145,19 @@ const InsightDashboard = ({
 
       {/* Streak Architecture */}
       <div className="streak-flex" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '16px' }}>
-        <motion.div variants={itemVariants} className="insight-stat-card glass-panel" style={{ padding: '16px', borderRadius: '28px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'rgba(var(--bg-primary-rgb), 0.3)' }}>
+        <motion.div variants={itemVariants} className="insight-stat-card glass-panel" style={{ padding: '16px', borderRadius: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'rgba(var(--bg-primary-rgb), 0.3)' }}>
           <div className="stat-icon-wrapper" style={{ color: '#f97316' }}><Flame size={20} /></div>
           <span className="stat-value" style={{ fontSize: '1.5rem', fontWeight: '800' }}>{streaks.currentStreak}</span>
           <span className="stat-label" style={{ fontSize: '0.65rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.6 }}>Current Streak</span>
         </motion.div>
         
-        <motion.div variants={itemVariants} className="insight-stat-card glass-panel" style={{ padding: '16px', borderRadius: '28px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'rgba(var(--bg-primary-rgb), 0.3)' }}>
+        <motion.div variants={itemVariants} className="insight-stat-card glass-panel" style={{ padding: '16px', borderRadius: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'rgba(var(--bg-primary-rgb), 0.3)' }}>
           <div className="stat-icon-wrapper" style={{ color: '#eab308' }}><Trophy size={20} /></div>
           <span className="stat-value" style={{ fontSize: '1.5rem', fontWeight: '800' }}>{streaks.longestStreak}</span>
           <span className="stat-label" style={{ fontSize: '0.65rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.6 }}>Best Streak</span>
         </motion.div>
 
-        <motion.div variants={itemVariants} className="insight-stat-card glass-panel" style={{ padding: '16px', borderRadius: '28px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'var(--accent-glow)', borderColor: 'var(--accent-primary)' }}>
+        <motion.div variants={itemVariants} className="insight-stat-card glass-panel" style={{ padding: '16px', borderRadius: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'var(--accent-glow)', borderColor: 'var(--accent-primary)' }}>
           <div className="stat-icon-wrapper" style={{ color: 'var(--accent-primary)' }}><Clock size={20} /></div>
           <span className="stat-value" style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--accent-primary)' }}>{totalFocusMinutes}m</span>
           <span className="stat-label" style={{ fontSize: '0.65rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--accent-primary)' }}>Focus Time</span>
@@ -151,6 +175,78 @@ const InsightDashboard = ({
         </p>
       </motion.div>
 
+      {/* Radar Balance Visualizer (Neural Web) */}
+      <motion.div variants={itemVariants} className="radar-section glass-panel" style={{ padding: '24px', borderRadius: '32px', position: 'relative' }}>
+        <h3 className="section-title" style={{ fontSize: '0.85rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '2px', color: 'var(--text-secondary)', marginBottom: '20px', textAlign: 'center' }}>Neural Web Alignment</h3>
+        
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative', height: '200px' }}>
+          <svg width="200" height="200" viewBox="0 0 160 160">
+            {/* Grid Lines */}
+            {gridPoints.map((points, i) => (
+              <polygon 
+                key={i} 
+                points={points} 
+                fill="none" 
+                stroke="var(--glass-border)" 
+                strokeWidth="0.5" 
+                strokeDasharray={i % 2 === 0 ? "none" : "2,2"}
+              />
+            ))}
+            {/* Axis Lines */}
+            {categoryStats.map((_, i) => {
+              const p = getPoint(i, 100);
+              return <line key={i} x1={center} y1={center} x2={p.x} y2={p.y} stroke="var(--glass-border)" strokeWidth="0.5" />;
+            })}
+            {/* Radar Polygon */}
+            <motion.polygon 
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              points={radarPoints}
+              fill="rgba(var(--accent-primary-rgb), 0.2)"
+              stroke="var(--accent-primary)"
+              strokeWidth="2"
+              strokeLinejoin="round"
+              style={{ filter: 'drop-shadow(0 0 4px var(--accent-glow))' }}
+            />
+            {/* Points */}
+            {categoryStats.map((cat, i) => {
+              const p = getPoint(i, Math.max(10, cat.score));
+              return (
+                <circle 
+                  key={i} 
+                  cx={p.x} cy={p.y} r="3" 
+                  fill={cat.color} 
+                  style={{ filter: `drop-shadow(0 0 4px ${cat.color}88)` }} 
+                />
+              );
+            })}
+          </svg>
+          
+          {/* Floating Labels */}
+          {categoryStats.map((cat, i) => {
+            const p = getPoint(i, 120);
+            return (
+              <div 
+                key={i} 
+                style={{ 
+                  position: 'absolute', 
+                  left: `${(p.x / 160) * 100}%`, 
+                  top: `${(p.y / 160) * 100}%`,
+                  transform: 'translate(-50%, -50%)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '2px'
+                }}
+              >
+                <span style={{ color: cat.color }}>{cat.icon}</span>
+                <span style={{ fontSize: '0.6rem', fontWeight: '900', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>{cat.label}</span>
+              </div>
+            );
+          })}
+        </div>
+      </motion.div>
+
       {/* Weekly Activity Bar Chart */}
       <motion.div variants={itemVariants} className="activity-section">
         <h3 className="section-title" style={{ fontSize: '0.85rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '2px', color: 'var(--text-secondary)', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -161,49 +257,25 @@ const InsightDashboard = ({
              const heightPct = data.val === 0 ? '6px' : `${Math.min(data.val * 20, 100)}%`;
              return (
                <div className="bar-col" key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                  <motion.div 
+                   <motion.div 
                     className="bar" 
                     initial={{ height: 0 }}
                     animate={{ height: heightPct }}
+                    whileHover={{ scaleX: 1.1, filter: 'brightness(1.2)' }}
                     transition={{ delay: 0.3 + i * 0.05, type: 'spring', stiffness: 200, damping: 20 }}
                     style={{ 
                       width: '100%', 
                       background: 'linear-gradient(180deg, var(--accent-primary), var(--accent-secondary))',
-                      borderRadius: '6px 6px 4px 4px',
+                      borderRadius: '100px',
                       opacity: data.val === 0 ? 0.2 : 1,
-                      boxShadow: data.val > 0 ? '0 4px 12px var(--accent-glow)' : 'none'
+                      boxShadow: data.val > 0 ? '0 4px 15px var(--accent-glow)' : 'none',
+                      cursor: 'pointer'
                     }}
                   />
-                  <div className="bar-label" style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)' }}>{data.label}</div>
+                  <div className="bar-label" style={{ fontSize: '0.65rem', fontWeight: '900', color: 'var(--text-secondary)', opacity: 0.8 }}>{data.label}</div>
                </div>
              )
           })}
-        </div>
-      </motion.div>
-
-      {/* Balance Visualizer */}
-      <motion.div variants={itemVariants} className="balance-section">
-        <h3 className="section-title" style={{ fontSize: '0.85rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '2px', color: 'var(--text-secondary)', marginBottom: '20px' }}>Equilibrium</h3>
-        <div className="balance-grid" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {categoryStats.map(cat => (
-            <div key={cat.id} className="balance-item">
-              <div className="balance-label-row" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.85rem', fontWeight: '600' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)' }}>
-                  <span style={{ color: cat.color }}>{cat.icon}</span> {cat.label}
-                </span>
-                <span style={{ color: 'var(--text-primary)' }}>{Math.round(cat.score)}%</span>
-              </div>
-              <div className="balance-bar-bg" style={{ height: '6px', background: 'rgba(0,0,0,0.05)', borderRadius: '10px', overflow: 'hidden' }}>
-                <motion.div 
-                  className="balance-bar-fill"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${cat.score}%` }}
-                  style={{ backgroundColor: cat.color, height: '100%', borderRadius: '10px', boxShadow: `0 0 10px ${cat.color}44` }}
-                  transition={{ duration: 1.2, ease: "circOut" }}
-                />
-              </div>
-            </div>
-          ))}
         </div>
       </motion.div>
 
@@ -226,14 +298,15 @@ const InsightDashboard = ({
                 <div style={{ 
                   width: '32px', 
                   height: '32px', 
-                  borderRadius: '50%', 
-                  background: mood ? 'rgba(var(--bg-primary-rgb), 0.5)' : 'rgba(0,0,0,0.05)',
+                  borderRadius: '12px', 
+                  background: mood ? 'var(--glass-bg)' : 'rgba(0,0,0,0.05)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '1.2rem',
-                  border: mood ? `1px solid ${moodMap[mood].color}` : '1px solid transparent',
-                  boxShadow: mood ? `0 0 10px ${moodMap[mood].color}33` : 'none'
+                  fontSize: '1.1rem',
+                  border: mood ? `1.5px solid ${moodMap[mood].color}` : '1.5px solid transparent',
+                  boxShadow: mood ? `0 0 15px ${moodMap[mood].color}44` : 'none',
+                  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
                 }}>
                   {mood ? moodMap[mood].emoji : '·'}
                 </div>
@@ -245,13 +318,16 @@ const InsightDashboard = ({
       </motion.div>
 
       {/* Mercy System */}
-      <motion.div variants={itemVariants} className="mercy-system glass-panel" style={{ padding: '24px', background: 'rgba(var(--bg-primary-rgb), 0.2)', borderStyle: 'dashed' }}>
-        <div className="mercy-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <h3 className="section-title" style={{ fontSize: '0.8rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-primary)' }}>Mercy Protocols</h3>
-          {isProtected && <CheckCircle2 size={16} style={{ color: 'var(--success-color)' }} />}
+      <motion.div variants={itemVariants} className="mercy-system glass-panel" style={{ padding: '24px', borderRadius: '32px', background: 'rgba(239, 68, 68, 0.05)', border: '1px dashed rgba(239, 68, 68, 0.2)' }}>
+        <div className="mercy-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', animation: 'pulse 2s infinite' }}></div>
+            <h3 className="section-title" style={{ fontSize: '0.8rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1.5px', color: '#ef4444' }}>Emergency Protocols</h3>
+          </div>
+          <ShieldAlert size={16} color="#ef4444" />
         </div>
-        <p className="mercy-description" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.5' }}>
-          Initiate emergency protocols to safeguard your momentum during high-friction cycles.
+        <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.6' }}>
+          Initiate emergency protocols to safeguard your momentum during high-friction cycles or system fatigue.
         </p>
         
         <div className="mercy-actions" style={{ display: 'flex', gap: '12px' }}>

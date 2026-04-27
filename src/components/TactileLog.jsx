@@ -199,7 +199,7 @@ const TactileLog = ({
                 >
                   <div className="subtask-list" style={{ padding: '16px 0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {(habit.subtasks || []).map(sub => (
-                      <div key={sub.id} className="subtask-item" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 12px', background: 'rgba(0,0,0,0.02)', borderRadius: '12px' }}>
+                      <div key={sub.id} className="subtask-item" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 12px', background: 'rgba(0,0,0,0.02)', borderRadius: '16px' }}>
                         <button 
                           onClick={() => toggleSubtask(habit.id, sub.id)}
                           style={{ 
@@ -276,14 +276,14 @@ const TactileLog = ({
               onChange={(e) => setNewHabit(e.target.value)}
               placeholder="What's your next win?" 
               className="add-habit-input"
-              style={{ padding: '14px 20px', borderRadius: '16px' }}
+              style={{ padding: '14px 20px', borderRadius: '24px' }}
             />
             <motion.button 
               whileHover={{ scale: 1.05, x: 2 }}
               whileTap={{ scale: 0.95 }}
               type="submit" 
               className="add-habit-btn"
-              style={{ borderRadius: '16px', background: 'var(--accent-primary)', width: '54px' }}
+              style={{ borderRadius: '24px', background: 'var(--accent-primary)', width: '54px' }}
             >
               <Plus size={24} />
             </motion.button>

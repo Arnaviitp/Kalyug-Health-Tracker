@@ -5,46 +5,44 @@
 ![HabitArc](https://img.shields.io/badge/Aesthetic-High--Fidelity-blueviolet?style=for-the-badge)
 ![React](https://img.shields.io/badge/Built%20with-React-61DAFB?style=for-the-badge&logo=react)
 ![Vite](https://img.shields.io/badge/Powered%20by-Vite-646CFF?style=for-the-badge&logo=vite)
-![Design](https://img.shields.io/badge/Style-Curved%20%26%20Fluid-FF69B4?style=for-the-badge)
+![Design](https://img.shields.io/badge/Style-Floating%20%26%20Curved-FF69B4?style=for-the-badge)
 
 ---
 
 ## ✨ Key Features
 
 ### 🎮 Gamified Ecosystem
-- **Neural Level System**: Earn XP for every habit and focus session completed. Watch your level grow from *Novice* to *Eternal* with custom-designed RPG-style attributes (Vitality, Intellect, Discipline, Zen, and Deep Focus).
-- **Dynamic Streaks**: Track your momentum with a robust streak system that calculates your "Coherence Score" and celebrates consistency.
-- **Achievements & Badges**: Unlock high-fidelity badges for milestones like "Midnight Warrior" or "Deep Work Master."
+- **Neural Level System**: Earn XP for every habit and focus session completed. Watch your level grow from *Novice* to *Eternal* with custom-designed RPG-style attributes.
+- **Neural Web Alignment**: A sophisticated **Radar Chart** visualization in the Insight Dashboard that maps your growth across *Vitality*, *Intellect*, *Discipline*, *Zen*, and *Focus*.
+- **Momentum Score**: A dynamic real-time metric that scales based on your productivity volume, mood, and focus consistency.
 
-### 🧠 Neural Resonance (Mood Tracking)
-- **Daily Calibration**: Log your emotional baseline directly from the header to synchronize your mental state with your productivity goals.
-- **Resonance Visualization**: Track your mood trends over time in the Insight Dashboard to correlate your emotional well-being with your habit consistency.
-
-### 📦 Neural Archive
-- **Habit Lifecycle Management**: Instead of deleting habits, move them to the **Neural Archive** to preserve your historical data while keeping your active dashboard focused.
-- **Restore Logic**: Easily bring archived habits back to your active list via the centralized Settings command center.
-
-### 🧠 Neural Sync (AI Assistant)
-- **Neural Prophecy**: An advanced insight engine that analyzes your productivity patterns to predict future performance and provide motivational "prophecies."
-- **Animated AI Sync**: Features a kinetic "Neural Orb" interface that visualizes data synchronization in real-time.
-
-### 🛡️ Resilience Architecture
-- **Streak Shield (Mercy System)**: Protect your momentum on high-friction days by "breaking the glass" to preserve your streaks.
-- **Recovery Mode**: A specialized high-contrast UI designed to pull you out of productivity slumps with prioritized motivational focus.
+### 🧠 Neural Reflection (Journaling)
+- **Deep Journaling**: Log your daily wins and reflections in a beautiful glass-morphic interface.
+- **Voice-to-Text Sync**: Transcribe your thoughts instantly using integrated voice-to-text technology.
+- **Sentiment Analysis**: HabitArc analyzes the sentiment of your entries to provide a "Neural Resonance" score and correlate your mindset with your results.
 
 ### 🧘 Focus Chamber (Zen Mode)
-- **Immersive Timer**: A full-screen Focus Chamber with "Breathing" visualizers, deep glassmorphism, and ambient soundscapes.
-- **Deep Focus XP**: Earn 1 XP for every 5 minutes of focused work, contributing to your overall neural evolution.
-- **Ambient Audio**: Integrated sound engine featuring *Brown Noise*, *Cinematic Rain*, *Forest Echo*, and *Deep Space*.
+- **Focus Modes 2.0**: Choose from specialized protocols like *Deep Work*, *Learning*, *Zen*, and *Coding*—each with unique visual indicators.
+- **Immersive Breathing Guide**: An animated "Neural Orb" visualizer that guides your breath during focus sessions to optimize your coherence.
+- **Session History**: Track every second of focus with a detailed intensity timeline and session logging.
+
+### 🔮 Neural Sync (AI Assistant)
+- **Neural Prophecy**: An advanced insight engine that analyzes your productivity patterns and mood trends to provide motivational "prophecies" and actionable advice.
+- **Interactive AI Sync**: kinetic visualizations that represent your data being processed and synchronized.
+
+### 🛡️ Resilience Architecture
+- **Emergency Protocols**: A high-security emergency console redesigned with pulsing status indicators and red-alert aesthetics to safeguard your streaks during "high-friction" cycles.
+- **Streak Shield**: Preserve your progress when life gets in the way, ensuring your momentum stays intact.
 
 ---
 
 ## 🎨 Design Philosophy
-HabitArc follows a **"Curved & Fluid"** aesthetic:
-- **Premium Typography**: Driven by **Outfit** and **Plus Jakarta Sans** for maximum readability and a professional tech feel.
+HabitArc follows a **"Floating & Curved"** aesthetic:
+- **Floating Pill Header**: A modern, detached navigation bar that floats at the top of the viewport for a cleaner, "OS" workspace feel.
+- **Dot-Grid Canvas**: A subtle, professional dot-grid background that adds depth and reinforces the "Operating System" aesthetic.
+- **Global Curvature**: High-curvature architecture with `32px` border-radius standards for panels and pill-shaped interactive elements.
 - **Deep Glassmorphism**: Cards feature `backdrop-filter: blur(20px)` with 1px border highlights and saturation-optimized background blends.
-- **Fluid Curvature**: Every interaction uses pill-shaped geometry (`borderRadius: 100px`) and "squircled" badges for a cohesive, modern look.
-- **Juicy Feedback**: Powered by **Framer Motion**—staggered entrances, springy habit pops, and "dopamine-hit" confetti bursts.
+- **Juicy Feedback**: Staggered entrances, springy habit pops, and "dopamine-hit" confetti bursts powered by **Framer Motion**.
 
 ---
 
@@ -78,8 +76,8 @@ HabitArc follows a **"Curved & Fluid"** aesthetic:
 - **Framework**: [React 18](https://reactjs.org/)
 - **Animations**: [Framer Motion](https://www.framer.com/motion/)
 - **Icons**: [Lucide React](https://lucide.dev/)
-- **Styling**: Vanilla CSS (Modern CSS Variables & Glassmorphism)
-- **Confetti**: `canvas-confetti`
+- **Styling**: Vanilla CSS (Modern CSS Variables, Grids, and Glassmorphism)
+- **Feedback**: `canvas-confetti`
 
 ---
 

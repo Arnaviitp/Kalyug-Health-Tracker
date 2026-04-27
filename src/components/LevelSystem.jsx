@@ -7,11 +7,11 @@ const RANKS = [
 ];
 
 const ATTRIBUTES = [
-  { id: 'physical', label: 'Vitality', icon: <Heart size={12} />, color: '#10b981' },
-  { id: 'mental', label: 'Intellect', icon: <Brain size={12} />, color: '#6366f1' },
-  { id: 'work', label: 'Discipline', icon: <Briefcase size={12} />, color: '#8b5cf6' },
-  { id: 'soul', label: 'Zen', icon: <Sparkles size={12} />, color: '#f59e0b' },
-  { id: 'focus', label: 'Deep Focus', icon: <Clock size={12} />, color: '#0ea5e9' },
+  { id: 'physical', label: 'Vitality', icon: <Heart size={14} />, color: '#4ade80' },
+  { id: 'mental', label: 'Intellect', icon: <Brain size={14} />, color: '#818cf8' },
+  { id: 'work', label: 'Discipline', icon: <Briefcase size={14} />, color: '#c084fc' },
+  { id: 'soul', label: 'Zen', icon: <Sparkles size={14} />, color: '#fbbf24' },
+  { id: 'focus', label: 'Deep Focus', icon: <Clock size={14} />, color: '#38bdf8' },
 ];
 
 export default function LevelSystem({ totalXP, attributes = { physical: 0, mental: 0, work: 0, soul: 0, focus: 0 } }) {
@@ -54,7 +54,7 @@ export default function LevelSystem({ totalXP, attributes = { physical: 0, menta
           color: 'white',
           width: '48px',
           height: '48px',
-          borderRadius: '16px',
+          borderRadius: '20px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -71,7 +71,7 @@ export default function LevelSystem({ totalXP, attributes = { physical: 0, menta
             <span style={{ fontSize: '0.8rem', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '1.5px', textTransform: 'uppercase' }}>{currentRank}</span>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '700' }}>{totalXP} <span style={{ opacity: 0.5 }}>XP</span></span>
           </div>
-          <div className="xp-bar-wrapper" style={{ height: '8px', background: 'rgba(0,0,0,0.06)', borderRadius: '100px', position: 'relative', width: '100%' }}>
+          <div className="xp-bar-wrapper" style={{ height: '8px', background: 'rgba(0,0,0,0.06)', borderRadius: '12px', position: 'relative', width: '100%' }}>
             <motion.div 
               className="xp-bar-fill" 
               initial={{ width: 0 }}
@@ -118,8 +118,8 @@ export default function LevelSystem({ totalXP, attributes = { physical: 0, menta
             {ATTRIBUTES.map(attr => (
               <div key={attr.id} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.65rem', fontWeight: '800', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span style={{ color: attr.color }}>{attr.icon}</span> {attr.label}
+                  <span style={{ fontSize: '0.7rem', fontWeight: '800', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ color: attr.color, display: 'flex', alignItems: 'center' }}>{attr.icon}</span> {attr.label}
                   </span>
                   <span style={{ fontSize: '0.7rem', fontWeight: '900', color: 'var(--text-primary)' }}>{attributes[attr.id] || 0}</span>
                 </div>

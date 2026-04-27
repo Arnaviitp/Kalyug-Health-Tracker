@@ -11,6 +11,13 @@ const FOCUS_QUOTES = [
   "Energy flows where attention goes."
 ];
 
+const FOCUS_MODES = [
+  { id: 'deep-work', label: 'Deep Work', icon: <Zap size={14} />, color: '#6366f1' },
+  { id: 'learning', label: 'Learning', icon: <Target size={14} />, color: '#10b981' },
+  { id: 'meditation', label: 'Zen', icon: <Zap size={14} />, color: '#f59e0b' },
+  { id: 'coding', label: 'Coding', icon: <Zap size={14} />, color: '#8b5cf6' },
+];
+
 export default function FocusTimer({
   timeLeft,
   setTimeLeft,
@@ -25,6 +32,7 @@ export default function FocusTimer({
 }) {
   const [sessionGoal, setSessionGoal] = useState('');
   const [isEditingGoal, setIsEditingGoal] = useState(true);
+  const [selectedFocusMode, setSelectedFocusMode] = useState('deep-work');
 
   const totalTime = useMemo(() => {
     if (mode === 'pomodoro') return 25 * 60;
@@ -43,14 +51,17 @@ export default function FocusTimer({
       setIsActive(false);
       
       if (mode === 'pomodoro') {
+        const currentModeData = FOCUS_MODES.find(m => m.id === selectedFocusMode);
         const newSession = {
           id: Date.now(),
           type: 'Pomodoro',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          duration: 25,
-          goal: sessionGoal
+          duration: Math.floor(totalTime / 60),
+          goal: sessionGoal,
+          focusMode: currentModeData?.label || 'Deep Work',
+          intensity: Math.floor(Math.random() * 20) + 80 // Simulated intensity for now
         };
-        const updatedHistory = [newSession, ...history].slice(0, 3);
+        const updatedHistory = [newSession, ...history].slice(0, 10);
         setHistory(updatedHistory);
         localStorage.setItem('k-focus-history', JSON.stringify(updatedHistory));
       }
@@ -65,7 +76,7 @@ export default function FocusTimer({
     }
 
     return () => clearInterval(interval);
-  }, [isActive, timeLeft, soundEnabled, mode, history, setIsActive, setTimeLeft, setHistory, sessionGoal]);
+  }, [isActive, timeLeft, soundEnabled, mode, history, setIsActive, setTimeLeft, setHistory, sessionGoal, selectedFocusMode, totalTime]);
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
@@ -85,14 +96,17 @@ export default function FocusTimer({
   };
 
   return (
-    <div className="focus-timer" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <div className="focus-timer" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
       <div className="timer-modes" style={{ 
         display: 'flex', 
-        gap: '8px', 
+        gap: '4px', 
         background: 'rgba(0,0,0,0.05)', 
-        padding: '6px', 
-        borderRadius: '100px', 
-        marginBottom: '32px' 
+        padding: '4px', 
+        borderRadius: '24px', 
+        marginBottom: '24px',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        width: '100%'
       }}>
         {['pomodoro', 'shortBreak', 'longBreak'].map(m => (
           <button 
@@ -101,7 +115,7 @@ export default function FocusTimer({
             onClick={() => changeMode(m)}
             style={{
               padding: '8px 16px',
-              borderRadius: '100px',
+              borderRadius: '20px',
               border: 'none',
               background: mode === m ? 'var(--bg-secondary)' : 'transparent',
               color: mode === m ? 'var(--accent-primary)' : 'var(--text-secondary)',
@@ -117,6 +131,34 @@ export default function FocusTimer({
         ))}
       </div>
 
+      {mode === 'pomodoro' && !isActive && (
+        <div className="focus-mode-selector" style={{ display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap', justifyContent: 'center' }}>
+          {FOCUS_MODES.map(fm => (
+            <button
+              key={fm.id}
+              onClick={() => setSelectedFocusMode(fm.id)}
+              style={{
+                padding: '6px 12px',
+                borderRadius: '16px',
+                border: selectedFocusMode === fm.id ? `1px solid ${fm.color}` : '1px solid var(--glass-border)',
+                background: selectedFocusMode === fm.id ? `${fm.color}15` : 'transparent',
+                color: selectedFocusMode === fm.id ? fm.color : 'var(--text-secondary)',
+                fontSize: '0.7rem',
+                fontWeight: '800',
+                textTransform: 'uppercase',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              {fm.icon} {fm.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       <AnimatePresence mode="wait">
         {isEditingGoal && mode === 'pomodoro' ? (
           <motion.div 
@@ -124,9 +166,9 @@ export default function FocusTimer({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            style={{ width: '100%', marginBottom: '32px' }}
+            style={{ width: '100%', marginBottom: '24px' }}
           >
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', width: '100%' }}>
               <input 
                 type="text" 
                 value={sessionGoal}
@@ -134,17 +176,19 @@ export default function FocusTimer({
                 placeholder="What are you achieving now?"
                 style={{ 
                   width: '100%', 
-                  padding: '16px 20px', 
-                  paddingLeft: '48px',
-                  borderRadius: '16px', 
+                  padding: '10px 12px', 
+                  paddingLeft: '38px',
+                  borderRadius: '14px', 
                   border: '1px solid var(--glass-border)', 
                   background: 'rgba(var(--bg-primary-rgb), 0.3)',
-                  fontSize: '0.95rem',
+                  fontSize: '0.85rem',
                   fontWeight: '600',
-                  color: 'var(--text-primary)'
+                  color: 'var(--text-primary)',
+                  outline: 'none',
+                  boxSizing: 'border-box'
                 }}
               />
-              <Target size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--accent-primary)' }} />
+              <Target size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--accent-primary)' }} />
             </div>
           </motion.div>
         ) : mode === 'pomodoro' ? (
@@ -154,7 +198,7 @@ export default function FocusTimer({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             onClick={() => !isActive && setIsEditingGoal(true)}
-            style={{ marginBottom: '32px', textAlign: 'center', cursor: isActive ? 'default' : 'pointer' }}
+            style={{ marginBottom: '24px', textAlign: 'center', cursor: isActive ? 'default' : 'pointer' }}
           >
             <div style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '8px' }}>Target Locked</div>
             <div style={{ fontSize: '1.1rem', fontWeight: '700', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
@@ -260,29 +304,31 @@ export default function FocusTimer({
         <div style={{ width: '100%', borderTop: '1px solid var(--glass-border)', paddingTop: '24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontSize: '0.75rem', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>
             <History size={14} />
-            <span>Chamber History</span>
+            <span>Neural Archive</span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <AnimatePresence initial={false}>
               {history.map((session) => (
                 <motion.div 
                   key={session.id} 
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '12px 16px', background: 'rgba(0,0,0,0.02)', borderRadius: '16px' }}
+                  style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '16px', background: 'rgba(var(--bg-primary-rgb), 0.2)', borderRadius: '24px', border: '1px solid var(--glass-border)' }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <Zap size={14} style={{ color: 'var(--accent-primary)' }} />
-                      <span style={{ fontSize: '0.85rem', fontWeight: '700' }}>{session.type}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Zap size={12} style={{ color: 'var(--accent-primary)' }} />
+                        <span style={{ fontSize: '0.85rem', fontWeight: '800', textTransform: 'uppercase' }}>{session.focusMode || 'Focus'}</span>
+                        <span style={{ fontSize: '0.7rem', padding: '2px 6px', background: 'var(--accent-glow)', color: 'var(--accent-primary)', borderRadius: '4px', fontWeight: '900' }}>{session.duration}M</span>
+                      </div>
+                      <span style={{ fontSize: '0.9rem', fontWeight: '700', color: 'var(--text-primary)' }}>{session.goal || "Pure Focus Session"}</span>
                     </div>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '500' }}>{session.timestamp}</span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '600' }}>{session.timestamp}</span>
                   </div>
-                  {session.goal && (
-                    <div style={{ fontSize: '0.75rem', opacity: 0.6, fontWeight: '500', paddingLeft: '24px' }}>
-                      ↳ {session.goal}
-                    </div>
-                  )}
+                  <div style={{ height: '4px', background: 'rgba(0,0,0,0.05)', borderRadius: '2px', overflow: 'hidden', display: 'flex' }}>
+                    <div style={{ width: `${session.intensity || 90}%`, background: 'var(--accent-primary)', height: '100%' }} />
+                  </div>
                 </motion.div>
               ))}
             </AnimatePresence>
